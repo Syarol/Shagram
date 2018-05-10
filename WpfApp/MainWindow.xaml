@@ -1,0 +1,82 @@
+﻿<Window x:Class="WpfApp.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:WpfApp"
+        mc:Ignorable="d"
+        Title="Telegram" Height="550" Width="625" WindowStyle="None"
+        ResizeMode="CanResizeWithGrip" AllowsTransparency="True"
+        WindowState="Normal"
+        WindowStartupLocation="CenterScreen" Loaded="Window_Loaded"
+        x:Name="main_window">
+    <Grid>
+
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="197*" />
+            <ColumnDefinition Width="428*" />
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="25"/>
+            <RowDefinition Height="3*"/>
+            <RowDefinition Height="1*" />
+        </Grid.RowDefinitions>
+
+        <Grid Grid.Column="0" Grid.Row="0" Grid.RowSpan="3"  HorizontalAlignment="Left" Background="#FF93C6F9" Grid.ColumnSpan="2" Width="197">
+
+            <Grid Grid.Row="0" VerticalAlignment="Center">
+                <Label x:Name="open_options" Width="20" HorizontalAlignment="Left" Content="&#xf0c9;" FontFamily="Font Awesome 5 Free Solid" Margin="5,0,0,0" ToolTip="Options"/>
+                <Label x:Name="user_name" Content="Label" Height="25" Margin="40,0,10,0"/>
+            </Grid>
+
+            <Ellipse Grid.Row="1" Height="100" VerticalAlignment="Top" Width="100" >
+                <Ellipse.Fill>
+                    <ImageBrush x:Name="img_userPhoto" ImageSource="D:\ЛНТУ\ООП\Курсова Чат\NewChat\NewChat\none.png" />
+                </Ellipse.Fill>
+            </Ellipse>
+
+            <!--<DataGrid x:Name="contacts_grid" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" Margin="0,153,0,0"/>
+-->
+            <ScrollViewer  Grid.Row="2" VerticalScrollBarVisibility="Auto">
+                <StackPanel x:Name="contacts_list">
+
+                </StackPanel>
+            </ScrollViewer>
+
+
+            <Grid.RowDefinitions>
+                <RowDefinition Height="50"/>
+                <RowDefinition Height="125"/>
+                <RowDefinition Height="5*" />
+            </Grid.RowDefinitions>
+        </Grid>
+
+        <Grid x:Name="window_top_bar" Grid.Column="1" Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="2*"/>
+                <ColumnDefinition Width="25"/>
+                <ColumnDefinition Width="25"/>
+                <ColumnDefinition Width="25"/>
+            </Grid.ColumnDefinitions>
+
+            <Label Grid.Column="1" x:Name="window_hide" Content="&#xF2D1;" FontFamily="Font Awesome 5 Free Regular" FontSize="14" Cursor="Hand" ToolTip="Minimize" MouseDown="window_hide_MouseDown"/>
+            <Label Grid.Column="2" x:Name="window_maximize" Content="&#xF2D0;" FontFamily="Font Awesome 5 Free Regular" FontSize="14" Cursor="Hand" ToolTip="Maximize" MouseDown="window_maximize_MouseDown"/>
+            <Label Grid.Column="3" x:Name="window_close" Content="&#xF410;" FontFamily="Font Awesome 5 Free Regular" FontSize="14" Cursor="Hand" ToolTip="Close" MouseDown="window_close_MouseDown"/>
+            <Rectangle Grid.Column="0" x:Name="top_bar" Fill="#FFF4F4F5" MouseDown="top_bar_MouseDown"/>
+        </Grid>
+
+        <Grid Grid.Column="1"  Grid.Row="2" VerticalAlignment="Bottom" Background="Aqua" Height="131">
+            <TextBox x:Name="message_enter_txb" Margin="20,20,80,35" TextWrapping="Wrap" Text="Enter Your messasge here" MaxLength="256" GotFocus="message_enter_txb_GotFocus" LostFocus="message_enter_txb_LostFocus"/>
+            <Button x:Name="send_message" Content="Send"  Margin="300,100,80,10" ToolTip="Send message"/>
+            <Label x:Name="add_file_to_message" Content="" FontFamily="Font Awesome 5 Free Regular" Margin="20,98,389,10" ToolTip="Add File"/>
+        </Grid>
+
+        <ScrollViewer x:Name="messages_field_scroll" Grid.Column="1" Grid.Row="1" VerticalScrollBarVisibility="Auto" >
+            <StackPanel x:Name="messages_field" Background="AntiqueWhite" VerticalAlignment="Bottom">
+                
+            </StackPanel>
+        </ScrollViewer>
+
+    </Grid>
+
+</Window>
