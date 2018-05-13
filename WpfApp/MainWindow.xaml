@@ -4,6 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:WpfApp"
+        xmlns:emoji="clr-namespace:Emoji.Wpf;assembly=Emoji.Wpf"
         mc:Ignorable="d"
         Title="Telegram" Height="550" Width="625" WindowStyle="None"
         ResizeMode="CanResizeWithGrip" AllowsTransparency="True"
@@ -64,14 +65,18 @@
             <Label Grid.Column="3" x:Name="window_close" Content="&#xF410;" FontFamily="Font Awesome 5 Free Regular" FontSize="14" Cursor="Hand" ToolTip="Close" MouseDown="window_close_MouseDown"/>
             <Rectangle Grid.Column="0" x:Name="top_bar" Fill="#FFF4F4F5" MouseDown="top_bar_MouseDown"/>
         </Grid>
-
-        <Grid Grid.Column="1"  Grid.Row="2" VerticalAlignment="Bottom" Background="Aqua" Height="131">
-            <TextBox x:Name="message_enter_txb" Margin="20,20,80,35" TextWrapping="Wrap" Text="Enter Your messasge here" MaxLength="256" GotFocus="message_enter_txb_GotFocus" LostFocus="message_enter_txb_LostFocus"/>
-            <Button x:Name="send_message" Content="Send"  Margin="300,100,80,10" ToolTip="Send message"/>
+        
+        <Grid x:Name="write_text_field" Grid.Column="1"  Grid.Row="2" VerticalAlignment="Bottom" Background="Aqua" Height="131">
+            <RichTextBox x:Name="message_enter_txb" Margin="20,20,80,35" GotFocus="message_enter_txb_GotFocus" LostFocus="message_enter_txb_LostFocus" KeyUp="message_enter_txb_KeyDown" TextChanged="message_enter_txb_TextChanged">
+                <FlowDocument>
+                    <Paragraph>Enter Your message here</Paragraph>
+                </FlowDocument>
+            </RichTextBox>
+            <Button x:Name="send_message" Content="Send"  Margin="300,100,80,10" ToolTip="Send message" Click="send_message_Click"/>
             <Label x:Name="add_file_to_message" Content="" FontFamily="Font Awesome 5 Free Regular" Margin="20,98,389,10" ToolTip="Add File"/>
         </Grid>
 
-        <ScrollViewer x:Name="messages_field_scroll" Grid.Column="1" Grid.Row="1" VerticalScrollBarVisibility="Auto" >
+        <ScrollViewer x:Name="messages_field_scroll" Grid.Column="1" Grid.Row="1" VerticalScrollBarVisibility="Auto" ScrollChanged="messages_field_scroll_ScrollChanged" >
             <StackPanel x:Name="messages_field" Background="AntiqueWhite" VerticalAlignment="Bottom">
                 
             </StackPanel>
