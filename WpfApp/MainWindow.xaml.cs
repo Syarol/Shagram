@@ -132,7 +132,8 @@ namespace WpfApp
                     //await Task.Run(() => GetContactsAsync());
                     //await Task.Run(() => GetDialogsAsync());
                     //await Task.WhenAll(GetContactsAsync, GetDialogsAsync);
-                    GetDialogsAsync();
+                    await Task.WhenAll(GetDialogsAsync());
+
                 }
             } 
             catch (Exception ex)
@@ -181,8 +182,6 @@ namespace WpfApp
         {
             try
             {
-                messages_field_scroll.ScrollToEnd();
-
                 if (write_text_field.Height != 0 && !dialog.Megagroup)
                 {
                     write_text_field.Height = 0;
@@ -192,26 +191,32 @@ namespace WpfApp
                     write_text_field.Height = 131;
                 }
 
-                int total = 1;
-                start = 0;
-                int end = 100;
-                //while (start <= total)
-                //{
-                    var req = new TLRequestGetHistory
-                    {
-                        AddOffset = start,
-                        Limit = end,
-                        Peer = new TLInputPeerChannel { ChannelId = dialog.Id, AccessHash = dialog.AccessHash.Value }
-                    };
+                int start;
+                int end;
 
-                if (!IsSameDialog(dialog))
+                if (IsSameDialog(dialog))
                 {
-                    messages_field.Children.Clear();
+                    start = messages_field.Children.Count;
+                    end = start + 50;
+                }
+                else
+                {
                     openedDialog = dialog;
+                    messages_field.Children.Clear();
+                    start = 0;
+                    end = 50;
+                    messages_field_scroll.ScrollToEnd();
                 }
 
+                var req = new TLRequestGetHistory
+                {
+                    AddOffset = start,
+                    Limit = end,
+                    Peer = new TLInputPeerChannel { ChannelId = dialog.Id, AccessHash = dialog.AccessHash.Value }
+                };
+
                 var activeDialogMessages = await client.SendRequestAsync<TLChannelMessages>(req);
-                    OpenMessages(activeDialogMessages);
+                OpenMessages(activeDialogMessages);
 
                 /*var message = (TLMessage)channelMessage;
                         var messageString = message.Message.ToString();
@@ -238,31 +243,35 @@ namespace WpfApp
         {
             try
             {
-                messages_field_scroll.ScrollToEnd();
                 if (write_text_field.Height == 0)
                 {
                     write_text_field.Height = 131;
                     //messages_field_scroll.Height = ;
                 }
 
-                int total = 1;
-                int start = 0;
-                int end = 100;
-                //while (start <= total)
-                //{
+                int start;
+                int end;
+
+                if (IsSameDialog(chat))
+                {
+                    start = messages_field.Children.Count;
+                    end = start + 50;
+                }
+                else
+                {
+                    openedDialog = chat;
+                    messages_field.Children.Clear();
+                    start = 0;
+                    end = 50;
+                    messages_field_scroll.ScrollToEnd();
+                }
+
                 var req = new TLRequestGetHistory
                 {
                     AddOffset = start,
                     Limit = end,
                     Peer = new TLInputPeerChat {ChatId = chat.Id}
                 };
-
-                if (!IsSameDialog(chat))
-                {
-                    messages_field.Children.Clear();
-                    openedDialog = chat;
-                    MessageBox.Show(openedDialog.GetType().ToString());
-                }
                 
                 try
                 {
@@ -274,8 +283,6 @@ namespace WpfApp
                     var messages = await client.SendRequestAsync<TLMessages>(req);
                     OpenMessages(messages);
                 }
-                //start += 101;  
-                //}
             }
             catch (Exception ex)
             {
@@ -285,25 +292,26 @@ namespace WpfApp
 
         private bool IsSameDialog(dynamic dialog)
         {
-            bool isSame = false;
-            if (openedDialog == null) openedDialog = dialog;
-
-            if (openedDialog.GetType() == dialog.GetType())
+            if (openedDialog == null)
+            {
+                openedDialog = dialog;
+                return false;
+            } else if (openedDialog.GetType() == dialog.GetType())
             {
                 if (openedDialog.GetType() == typeof(TLUser))
                 {
                     if (openedDialog.FirstName == dialog.FirstName &&
                         openedDialog.LastName == dialog.LastName &&
-                        openedDialog.Username == dialog.Username) isSame = true;
+                        openedDialog.Username == dialog.Username) return true;
                 }
                 else if (openedDialog.GetType() == typeof(TLChannel) || openedDialog.GetType() == typeof(TLChat))
                 {
-                    if (openedDialog.Title == dialog.Title) isSame = true; 
+                    if (openedDialog.Title == dialog.Title) return true; 
                 }
-                else isSame = false;
+                else return false;
             }
-            else isSame = false;
-            return isSame;
+            else return false;
+            return false;
         }
 
         private void OpenMessages(TLMessagesSlice messages)
@@ -324,7 +332,8 @@ namespace WpfApp
                 else if (chatMessage.GetType() == typeof(TLMessageService))
                 {
                     var message = (TLMessageService)chatMessage;
-                    txtBlock.Text = message.ToId.ToString();
+                    dynamic action = message.Action;
+                    txtBlock.Text = ServiceMessageHandler(action).ToString();
                     messages_field.Children.Insert(0, txtBlock);
                 }
 
@@ -344,14 +353,57 @@ namespace WpfApp
                 {
                     var message = (TLMessage)chatMessage;
                     txtBlock.Text = message.Message.ToString();
-                    messages_field.Children.Insert(0, txtBlock);
                 }
                 else if (chatMessage.GetType() == typeof(TLMessageService))
                 {
                     var message = (TLMessageService)chatMessage;
-                    txtBlock.Text = message.ToId.ToString();
-                    messages_field.Children.Insert(0, txtBlock);
+                    dynamic action = message.Action;
+                    txtBlock.Text = ServiceMessageHandler(action).ToString();
                 }
+
+                messages_field.Children.Insert(0, txtBlock);
+            }
+        }
+
+        private string ServiceMessageHandler(dynamic action)
+        {
+            switch (action)
+            {
+                case TLMessageActionChannelCreate act:
+                    return act.Title + " is created";
+                case TLMessageActionChannelMigrateFrom act:
+                    return act.Title + " is upgraded to supergroup";
+                case TLMessageActionChatAddUser act:
+                    return act.Users + " joined";
+                case TLMessageActionChatCreate act:
+                    return act.Title + " is created";
+                case TLMessageActionChatDeletePhoto act:
+                    return act.ToString();
+                case TLMessageActionChatDeleteUser act:
+                    return act.UserId.ToString() + " is deleted from group";
+                case TLMessageActionChatEditPhoto act:
+                    return act.Photo + " is changed";
+                case TLMessageActionChatEditTitle act:
+                    return "Title changed to " + act.Title;
+                case TLMessageActionChatJoinedByLink act:
+                    return act.InviterId + " joined by link";
+                case TLMessageActionChatMigrateTo act:
+                    return act.ChannelId + " is migrated";
+                case TLMessageActionEmpty act:
+                    return "Empty message";
+                case TLMessageActionGameScore act:
+                    return act.GameId + " gate result is " + act.Score;
+                case TLMessageActionHistoryClear act:
+                    return "History was cleared";
+                case TLMessageActionPaymentSent act:
+                    return "Some payment action";
+                case TLMessageActionPaymentSentMe act:
+                    return "Some payment action";
+                case TLMessageActionPhoneCall act:
+                    return act.CallId + " is called"; 
+                case TLMessageActionPinMessage act:
+                    return "Some message was pinned";
+                default: return "Some action";
             }
         }
 
@@ -373,7 +425,8 @@ namespace WpfApp
                 else if (chatMessage.GetType() == typeof(TLMessageService))
                 {
                     var message = (TLMessageService)chatMessage;
-                    txtBlock.Text = message.ToId.ToString();
+                    dynamic action = message.Action;
+                    txtBlock.Text = ServiceMessageHandler(action).ToString();
                     messages_field.Children.Insert(0, txtBlock);
                 }
 
@@ -390,18 +443,23 @@ namespace WpfApp
                     //messages_field_scroll.Height = ;
                 }
 
-                if (!IsSameDialog(contact))
+                int start;
+                int end;
+
+                if (IsSameDialog(contact))
                 {
-                    messages_field.Children.Clear();
-                    messages_field_scroll.ScrollToEnd();
+                    start = messages_field.Children.Count;
+                    end = start + 50;
+                }
+                else
+                {
                     openedDialog = contact;
+                    messages_field.Children.Clear();
+                    start = 0;
+                    end = 50;
+                    messages_field_scroll.ScrollToEnd();
                 }
 
-                int total = 1;
-                int start = 0;
-                int end = 100;
-                //while (start <= total)
-                //{
                 var req = new TLRequestGetHistory
                 {
                     AddOffset = start,
@@ -418,9 +476,6 @@ namespace WpfApp
                     var messages = await client.SendRequestAsync<TLMessages>(req);
                     OpenMessages(messages);
                 }
-                
-                //start += 101;  
-                //}
             }
             catch (Exception ex)
             {
@@ -428,7 +483,7 @@ namespace WpfApp
             }
         } 
 
-        private async void GetDialogsAsync()
+        private async Task<bool> GetDialogsAsync()
         {
             var dialogs = await client.GetUserDialogsAsync() as TLDialogs;
             var chats = dialogs.Chats.Where(x => x.GetType() == typeof(TLChannel)).Cast<TLChannel>();
@@ -442,6 +497,7 @@ namespace WpfApp
                 txtBlock.Height = 20;
                 txtBlock.VerticalAlignment = VerticalAlignment.Center;
                 txtBlock.Text = (chat.Title).ToString();
+
                 txtBlock.MouseDown += (sender, e) => OpenChatAsync(chat);
                 contacts_list.Children.Add(txtBlock);
             }
@@ -485,6 +541,8 @@ namespace WpfApp
                 txtBlock.MouseDown += (sender, e) => OpenUserDialogAsync(_session.TLUser);
                 contacts_list.Children.Add(txtBlock);
             }
+
+            return true;
         }
 
         private async Task<bool> DidHaveMessagesAsync(TLUser contact)
@@ -525,9 +583,20 @@ namespace WpfApp
 
         private void messages_field_scroll_ScrollChanged(object sender, ScrollChangedEventArgs e)
         {
-            if (messages_field.Children.Count != 0 && messages_field_scroll.VerticalOffset == messages_field_scroll.Height)
+            if (messages_field.Children.Count >= 50 && messages_field_scroll.VerticalOffset == 0)
             {
-                //start += 101;
+               if (openedDialog.GetType() == typeof(TLUser))
+               {
+                   OpenUserDialogAsync(openedDialog);
+               }
+               else if(openedDialog.GetType() == typeof(TLChannel))
+               {
+                   OpenDialogAsync(openedDialog);
+               }
+               else if (openedDialog.GetType() == typeof(TLChat))
+               {
+                   OpenChatAsync(openedDialog);
+               } 
             }
         }
 
