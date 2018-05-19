@@ -67,13 +67,16 @@
         </Grid>
         
         <Grid x:Name="write_text_field" Grid.Column="1"  Grid.Row="2" VerticalAlignment="Bottom" Background="Aqua" Height="131">
-            <RichTextBox x:Name="message_enter_txb" Margin="20,20,80,35" GotFocus="message_enter_txb_GotFocus" LostFocus="message_enter_txb_LostFocus" KeyUp="message_enter_txb_KeyDown" TextChanged="message_enter_txb_TextChanged">
+            <RichTextBox x:Name="message_enter_txb" Margin="20,20,80,35" GotFocus="message_enter_txb_GotFocus" LostFocus="message_enter_txb_LostFocus" TextChanged="message_enter_txb_TextChanged">
                 <FlowDocument>
                     <Paragraph>Enter Your message here</Paragraph>
                 </FlowDocument>
             </RichTextBox>
             <Button x:Name="send_message" Content="Send"  Margin="300,100,80,10" ToolTip="Send message" Click="send_message_Click"/>
-            <Label x:Name="add_file_to_message" Content="" FontFamily="Font Awesome 5 Free Regular" Margin="20,98,389,10" ToolTip="Add File"/>
+            <Label x:Name="add_file_to_message" Content="" FontFamily="Font Awesome 5 Free Regular" Margin="20,98,389,10" ToolTip="Add File" MouseDown="pin_file_Click"/>
+            <ScrollViewer Margin="44,96,264,0" VerticalScrollBarVisibility="Hidden" HorizontalScrollBarVisibility="Auto">
+                <Label x:Name="added_file_name" Content="" Padding="0"/>
+            </ScrollViewer>
         </Grid>
 
         <ScrollViewer x:Name="messages_field_scroll" Grid.Column="1" Grid.Row="1" VerticalScrollBarVisibility="Auto" ScrollChanged="messages_field_scroll_ScrollChanged" >

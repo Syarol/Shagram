@@ -35,7 +35,8 @@ using TLSharp.Core.Auth;
 using TLSharp.Core.MTProto.Crypto;
 using TLSharp.Core.Network;
 
-using Emoji.Wpf;
+//using Emoji.Wpf;
+using MimeTypes;
 
 using TLAuthorization = TeleSharp.TL.Auth.TLAuthorization;
 
@@ -63,6 +64,7 @@ namespace WpfApp
         private IEnumerable<TLUser> contacts;
         private int start = 0;
         private dynamic openedDialog = null;
+        private string pinnedFile = null;
 
         private TelegramClient client;
         private TLUser user = null;
@@ -179,18 +181,30 @@ namespace WpfApp
             return resFile;
         } 
 
-        private async void OpenDialogAsync(TLChannel dialog)
+        private async void OpenDialogAsync(dynamic dialog)
         {
             try
             {
-                if (write_text_field.Height != 0 && !dialog.Megagroup)
+                if (write_text_field.Height == 0)
                 {
-                    write_text_field.Height = 0;
-                    //messages_field_scroll.Height = ;
-                } else if (write_text_field.Height == 0 && dialog.Megagroup)
-                {
-                    write_text_field.Height = 131;
-                }
+                    if (dialog.GetType() == typeof(TLChannel))
+                    {
+                        if (!dialog.Megagroup)
+                        {
+                            write_text_field.Height = 0;
+                            //messages_field_scroll.Height = ;
+                        }
+                        else if (dialog.Megagroup)
+                        {
+                            write_text_field.Height = 131;
+                        }
+                    }
+                    else
+                    {
+                        write_text_field.Height = 131;
+                        //messages_field_scroll.Height = ;
+                    }
+                }              
 
                 int start;
                 int end;
@@ -198,96 +212,77 @@ namespace WpfApp
                 if (IsSameDialog(dialog))
                 {
                     start = messages_field.Children.Count;
-                    if (dialog.Megagroup)
-                        end = start + 50;
-                    else end = start + 25;
+                    if (dialog.GetType() == typeof(TLChannel))
+                    {
+                        if (dialog.Megagroup) end = start + 50;
+                        else end = start + 25;
+                    } else end = start + 50;
                 }
                 else
                 {
                     openedDialog = dialog;
                     messages_field.Children.Clear();
                     start = 0;
-                    if (dialog.Megagroup)
-                        end = 50;
+                    if (dialog.GetType() == typeof(TLChannel))
+                    {
+                        if (dialog.Megagroup) end = 50;
+                        else end = 25;
+                    }
                     else end = 25;
                     messages_field_scroll.ScrollToEnd();
                 }
 
-                var req = new TLRequestGetHistory
+                switch (dialog)
                 {
-                    AddOffset = start,
-                    Limit = end,
-                    Peer = new TLInputPeerChannel { ChannelId = dialog.Id, AccessHash = dialog.AccessHash.Value }
-                };
+                    case TLChannel item:
+                        var req = new TLRequestGetHistory
+                        {
+                            AddOffset = start,
+                            Limit = end,
+                            Peer = new TLInputPeerChannel { ChannelId = dialog.Id, AccessHash = dialog.AccessHash }
+                        };
 
-                var activeDialogMessages = await client.SendRequestAsync<TLChannelMessages>(req);
-                OpenMessagesAsync(activeDialogMessages);
+                        OpenMessagesAsync(await client.SendRequestAsync<TLChannelMessages>(req));
+                        break;
+                    case TLChat item:
+                        req = new TLRequestGetHistory
+                        {
+                            AddOffset = start,
+                            Limit = end,
+                            Peer = new TLInputPeerChat { ChatId = item.Id }
+                        };
 
-                /*var message = (TLMessage)channelMessage;
-                        var messageString = message.Message.ToString();
+                        try
+                        {
+                            OpenMessagesAsync(await client.SendRequestAsync<TLMessagesSlice>(req));
+                        }
+                        catch (InvalidCastException ex)
+                        {
+                            OpenMessagesAsync(await client.SendRequestAsync<TLMessages>(req));
+                        }
+                        break;
+                    case TLUser item:
+                        req = new TLRequestGetHistory
+                        {
+                            AddOffset = start,
+                            Limit = end,
+                            Peer = new TLInputPeerUser { UserId = item.Id, AccessHash = item.AccessHash.Value }
+                        };
 
-                        string mssg = rgx.Replace(messageString, (matched) => {
-                            Emoji.Wpf.Image img = new Emoji.Wpf.Image();
-                            img.Text = matched.Value;
-                            //MessageBox.Show("{img.Text}");
-                            return String.Format("{0}", img);
-                        });
-
-                        txtBlock.Text = mssg;
-                        messages_field.Children.Insert(0, txtBlock);*/
-
-                //}
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.ToString());
-            }
-        }
-
-        private async void OpenChatAsync(TLChat chat)
-        {
-            try
-            {
-                if (write_text_field.Height == 0)
-                {
-                    write_text_field.Height = 131;
-                    //messages_field_scroll.Height = ;
+                        try
+                        {
+                            OpenMessagesAsync(await client.SendRequestAsync<TLMessagesSlice>(req));
+                        }
+                        catch (InvalidCastException)
+                        {
+                            OpenMessagesAsync(await client.SendRequestAsync<TLMessages>(req));
+                        }
+                        break;
+                    default:
+                        MessageBox.Show("Hmm🤔...new dialog type");
+                        break;
                 }
 
-                int start;
-                int end;
-
-                if (IsSameDialog(chat))
-                {
-                    start = messages_field.Children.Count;
-                    end = start + 50;
-                }
-                else
-                {
-                    openedDialog = chat;
-                    messages_field.Children.Clear();
-                    start = 0;
-                    end = 50;
-                    messages_field_scroll.ScrollToEnd();
-                }
-
-                var req = new TLRequestGetHistory
-                {
-                    AddOffset = start,
-                    Limit = end,
-                    Peer = new TLInputPeerChat {ChatId = chat.Id}
-                };
-                
-                try
-                {
-                    var messages = await client.SendRequestAsync<TLMessagesSlice>(req);
-                    OpenMessagesAsync(messages);
-                }
-                catch (InvalidCastException ex)
-                {
-                    var messages = await client.SendRequestAsync<TLMessages>(req);
-                    OpenMessagesAsync(messages);
-                }
             }
             catch (Exception ex)
             {
@@ -303,121 +298,60 @@ namespace WpfApp
                 return false;
             } else if (openedDialog.GetType() == dialog.GetType())
             {
-                if (openedDialog.GetType() == typeof(TLUser))
+                switch (openedDialog)
                 {
-                    if (openedDialog.FirstName == dialog.FirstName &&
-                        openedDialog.LastName == dialog.LastName &&
-                        openedDialog.Username == dialog.Username) return true;
+                    case TLUser aVar:
+                        if (openedDialog.FirstName == dialog.FirstName &&
+                            openedDialog.LastName == dialog.LastName &&
+                            openedDialog.Username == dialog.Username) return true;
+                        else return false;
+                    case TLChannel bVar:
+                    case TLChat cVar:
+                        if (openedDialog.Title == dialog.Title) return true;
+                        else return false;
+                    default:
+                        MessageBox.Show("Hmm🤔...new dialog type");
+                        return false;
                 }
-                else if (openedDialog.GetType() == typeof(TLChannel) || openedDialog.GetType() == typeof(TLChat))
-                {
-                    if (openedDialog.Title == dialog.Title) return true; 
-                }
-                else return false;
             }
             else return false;
-            return false;
         }
 
         private async void OpenMessagesAsync(TLMessagesSlice messages)
         {
-            foreach (var chatMessage in messages.Messages)
+            try
             {
-                StackPanel txtBlockWrapper = new StackPanel();
-                txtBlockWrapper.Orientation = Orientation.Horizontal;
-
-                System.Windows.Controls.TextBlock txtBlock = new System.Windows.Controls.TextBlock();
-                txtBlock.TextWrapping = TextWrapping.Wrap;
-                txtBlock.Margin = new Thickness(10, 0, 0, 0);
-                txtBlock.VerticalAlignment = VerticalAlignment.Center;
-
-                switch (chatMessage)
+                foreach (var chatMessage in messages.Messages)
                 {
-                    case TLMessage message:
-                    {
-                        txtBlock.Text = message.Message.ToString();
-                        switch (message.Media)
-                        {
-                            case TLMessageMediaPhoto item:
-                                {
-                                    System.Windows.Controls.Image photo = new System.Windows.Controls.Image();
-                                    photo.Height = 200;
-                                    photo.Width = 200;
-                                    var messagePhoto = await GetMessagePhotoAsync(item);
-                                    photo.Source = ByteToImage(messagePhoto.Bytes);
-                                    txtBlockWrapper.Children.Add(photo);
-                                    break;
-                                }
-                            case TLMessageMediaDocument item:
-                                TLDocument doc = (TLDocument)item.Document;
-                                foreach (var att in doc.Attributes.ToList())
-                                {
-                                    switch (att)
-                                    {
-                                       case TLDocumentAttributeVideo video:
+                    StackPanel txtBlockWrapper = new StackPanel();
+                    txtBlockWrapper.Orientation = Orientation.Horizontal;
 
-                                            break;
-                                       case TLDocumentAttributeAudio audio:
+                    TextBlock txtBlock = new TextBlock();
+                    txtBlock.TextWrapping = TextWrapping.Wrap;
+                    txtBlock.Margin = new Thickness(10, 0, 0, 0);
+                    txtBlock.VerticalAlignment = VerticalAlignment.Center;
 
-                                            break;
-                                       case TLDocumentAttributeSticker sticker:
-
-                                            break;
-                                    }
-                                }
-                                break;
-                            default:
-                            {
-                                MessageBox.Show(message.Media.GetType().ToString());
-                                break;    
-                            }
-                        }
-                        break;
-                    }
-                    case TLMessageService message:
-                    {
-                        dynamic action = message.Action;
-                        txtBlock.Text = ServiceMessageHandler(action).ToString();
-                        break;
-                    }
-                }
-                messages_field.Children.Insert(0, txtBlock);
-            }
-        }
-
-        private async void OpenMessagesAsync(TLChannelMessages messages)
-        {
-            foreach (var chatMessage in messages.Messages)
-            {
-                StackPanel txtBlockWrapper = new StackPanel();
-                txtBlockWrapper.Orientation = Orientation.Horizontal;
-
-                System.Windows.Controls.TextBlock txtBlock = new System.Windows.Controls.TextBlock();
-                txtBlock.TextWrapping = TextWrapping.Wrap;
-                txtBlock.Margin = new Thickness(10, 0, 0, 0);
-                txtBlock.VerticalAlignment = VerticalAlignment.Center;
-                try
-                {
                     switch (chatMessage)
                     {
                         case TLMessage message:
-                        {
-                            txtBlock.Text = message.Message.ToString();
-                            switch (message.Media)
                             {
-                                case TLMessageMediaPhoto item:
-                                    {
-                                        System.Windows.Controls.Image photo = new System.Windows.Controls.Image();
-                                        photo.Height = 200;
-                                        photo.Width = 200;
-                                        var messagePhoto = await GetMessagePhotoAsync(item);
-                                        photo.Source = ByteToImage(messagePhoto.Bytes);
-                                        txtBlockWrapper.Children.Add(photo);
-                                        break;
-                                    }
-                                case TLMessageMediaDocument item:
-                                    TLDocument doc = (TLDocument)item.Document;
-                                    foreach (var att in doc.Attributes.ToList())
+                                if (message.Message != "") txtBlock.Text = message.Message;
+                                switch (message.Media)
+                                {
+                                    case TLMessageMediaPhoto item:
+                                        {
+                                            System.Windows.Controls.Image photo = new System.Windows.Controls.Image();
+                                            photo.Height = 200;
+                                            photo.Width = 200;
+                                            var messagePhoto = await GetMessagePhotoAsync(item);
+
+                                            photo.Source = ByteToImage(messagePhoto.Bytes);
+                                            txtBlockWrapper.Children.Add(photo);
+                                            break;
+                                        }
+                                    case TLMessageMediaDocument item:
+                                        var doc = (TLDocument)item.Document;
+                                        foreach (var att in doc.Attributes.ToList())
                                         {
                                             switch (att)
                                             {
@@ -428,47 +362,128 @@ namespace WpfApp
 
                                                     break;
                                                 case TLDocumentAttributeSticker sticker:
+                                                    var inputStickerSet = (TLInputStickerSetID)sticker.Stickerset;
+                                                    //var stickerSet = (TLStickerSet)sticker;
 
+                                                    var req = new TLInputDocumentFileLocation()
+                                                    {
+                                                        Id = inputStickerSet.Id,
+                                                        AccessHash = inputStickerSet.AccessHash,
+                                                        Version = doc.Version
+                                                    };
+                                                    MessageBox.Show(req.ToString());
                                                     break;
                                             }
                                         }
-                                    break;
-                                default:
+                                        break;
+                                }
+                                break;
+                            }
+                        case TLMessageService message:
+                            {
+                                dynamic action = message.Action;
+                                txtBlock.Text = ServiceMessageHandler(action).ToString();
+                                break;
+                            }
+                    }
+                    txtBlockWrapper.Children.Add(txtBlock);
+                    messages_field.Children.Insert(0, txtBlockWrapper);
+                }
+            } catch (Exception ex)
+            {
+                MessageBox.Show(ex.ToString());
+            }
+        }
+
+        private async void OpenMessagesAsync(TLChannelMessages messages)
+        {
+            try
+            {
+                foreach (var chatMessage in messages.Messages)
+                {
+                    StackPanel txtBlockWrapper = new StackPanel();
+                    txtBlockWrapper.Orientation = Orientation.Vertical;
+
+                    TextBlock txtBlock = new TextBlock();
+                    txtBlock.TextWrapping = TextWrapping.Wrap;
+                    txtBlock.Margin = new Thickness(10, 0, 0, 0);
+                    txtBlock.VerticalAlignment = VerticalAlignment.Center;
+                    try
+                    {
+                        switch (chatMessage)
+                        {
+                            case TLMessage message:
                                 {
-                                    MessageBox.Show("Some another");
+                                    if (message.Message != "") txtBlock.Text = message.Message;
+                                    switch (message.Media)
+                                    {
+                                        case TLMessageMediaPhoto item:
+                                            {
+                                                System.Windows.Controls.Image photo = new System.Windows.Controls.Image();
+                                                photo.Height = 200;
+                                                photo.Width = 200;
+                                                var messagePhoto = await GetMessagePhotoAsync(item);
+                                                photo.Source = ByteToImage(messagePhoto.Bytes);
+                                                txtBlockWrapper.Children.Add(photo);
+
+                                                if (item.Caption != "") txtBlock.Text = item.Caption;
+                                                break;
+                                            }
+                                        case TLMessageMediaDocument item:
+                                            TLDocument doc = (TLDocument)item.Document;
+                                            foreach (var att in doc.Attributes.ToList())
+                                            {
+                                                switch (att)
+                                                {
+                                                    case TLDocumentAttributeVideo video:
+
+                                                        break;
+                                                    case TLDocumentAttributeAudio audio:
+
+                                                        break;
+                                                    case TLDocumentAttributeSticker sticker:
+
+                                                        break;
+                                                }
+                                            }
+                                            break;
+                                    }
                                     break;
                                 }
-                            }
-                            break;
-                        }
-                        case TLMessageService message:
-                        {
-                            dynamic action = message.Action;
-                            txtBlock.Text = ServiceMessageHandler(action).ToString();
-                            break;
+                            case TLMessageService message:
+                                {
+                                    txtBlock.TextAlignment = TextAlignment.Center;
+                                    dynamic action = message.Action;
+                                    txtBlock.Text = ServiceMessageHandler(action).ToString();
+                                    break;
+                                }
                         }
                     }
-                } catch (Exception ex)
-                {
-                    MessageBox.Show(ex.ToString());
-                    Application.Current.Shutdown();
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show(ex.ToString());
+                        Application.Current.Shutdown();
+                    }
+                    txtBlockWrapper.Children.Add(txtBlock);
+                    messages_field.Children.Insert(0, txtBlockWrapper);
                 }
-                txtBlockWrapper.Children.Insert(0, txtBlock);
-                messages_field.Children.Insert(0, txtBlockWrapper);
+            } catch(Exception ex)
+            {
+                MessageBox.Show(ex.ToString());
             }
         }
 
         private async Task<TLFile> GetMessagePhotoAsync(TLMessageMediaPhoto message)
         {
-            var photo = ((TLPhoto)message.Photo);
+            var photo = (TLPhoto)message.Photo;
 
             var photoSize = (TLPhotoSize)photo.Sizes.ToList().Last();
-            TLFileLocation tf = (TLFileLocation)photoSize.Location;
+            var photoLocation = (TLFileLocation)photoSize.Location;
             var resFile = await client.GetFile(new TLInputFileLocation
             {
-                LocalId = tf.LocalId,
-                Secret = tf.Secret,
-                VolumeId = tf.VolumeId
+                LocalId = photoLocation.LocalId,
+                Secret = photoLocation.Secret,
+                VolumeId = photoLocation.VolumeId
             }, 512 * 1024);
 
             return resFile;
@@ -523,7 +538,7 @@ namespace WpfApp
                 StackPanel txtBlockWrapper = new StackPanel();
                 txtBlockWrapper.Orientation = Orientation.Horizontal;
 
-                System.Windows.Controls.TextBlock txtBlock = new System.Windows.Controls.TextBlock();
+                TextBlock txtBlock = new TextBlock();
                 txtBlock.TextWrapping = TextWrapping.Wrap;
                 txtBlock.Margin = new Thickness(10, 0, 0, 0);
                 txtBlock.VerticalAlignment = VerticalAlignment.Center;
@@ -562,7 +577,7 @@ namespace WpfApp
                                 break;
                             default:
                                 {
-                                    MessageBox.Show("Some another");
+                                    //MessageBox.Show(message.Media.GetType().ToString());
                                     break;
                                 }
                         }
@@ -570,6 +585,7 @@ namespace WpfApp
                     }
                     case TLMessageService message:
                     {
+                        txtBlock.TextAlignment = TextAlignment.Center;
                         dynamic action = message.Action;
                         txtBlock.Text = ServiceMessageHandler(action).ToString();
                         break;
@@ -580,116 +596,62 @@ namespace WpfApp
             }
         }
 
-        private async void OpenUserDialogAsync(TLUser contact)
-        {
-            try
-            {
-                if (write_text_field.Height == 0)
-                {
-                    write_text_field.Height = 131;
-                    //messages_field_scroll.Height = ;
-                }
-
-                int start;
-                int end;
-
-                if (IsSameDialog(contact))
-                {
-                    start = messages_field.Children.Count;
-                    end = start + 50;
-                }
-                else
-                {
-                    openedDialog = contact;
-                    messages_field.Children.Clear();
-                    start = 0;
-                    end = 50;
-                    messages_field_scroll.ScrollToEnd();
-                }
-
-                var req = new TLRequestGetHistory
-                {
-                    AddOffset = start,
-                    Limit = end,
-                    Peer = new TLInputPeerUser { UserId = contact.Id, AccessHash = contact.AccessHash.Value }
-                };
-
-                try
-                {
-                    var messages = await client.SendRequestAsync<TLMessagesSlice>(req);
-                    OpenMessagesAsync(messages);
-                } catch (InvalidCastException)
-                {
-                    var messages = await client.SendRequestAsync<TLMessages>(req);
-                    OpenMessagesAsync(messages);
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.ToString());
-            }
-        } 
-
-        private async Task<bool> GetDialogsAsync()
+        private async Task GetDialogsAsync()
         {
             var dialogs = await client.GetUserDialogsAsync() as TLDialogs;
             var chats = dialogs.Chats.Where(x => x.GetType() == typeof(TLChannel)).Cast<TLChannel>();
             var userChats = dialogs.Chats.Where(x => x.GetType() == typeof(TLChat)).Cast<TLChat>();
+            TLContacts result = await client.GetContactsAsync();
+            contacts = result.Users.ToList().Where(x => x.GetType() == typeof(TLUser)).Cast<TLUser>();
 
             foreach (var chat in userChats)
             {
-                System.Windows.Controls.TextBlock txtBlock = new System.Windows.Controls.TextBlock();
+                TextBlock txtBlock = new TextBlock();
                 txtBlock.TextWrapping = TextWrapping.Wrap;
                 txtBlock.Margin = new Thickness(10, 0, 0, 0);
                 txtBlock.Height = 20;
                 txtBlock.VerticalAlignment = VerticalAlignment.Center;
-                txtBlock.Text = (chat.Title).ToString();
+                txtBlock.Text = chat.Title;
 
-                txtBlock.MouseDown += (sender, e) => OpenChatAsync(chat);
+                txtBlock.MouseDown += (sender, e) => OpenDialogAsync(chat);
                 contacts_list.Children.Add(txtBlock);
             }
 
             foreach (var dialog in chats)
             {
-                System.Windows.Controls.TextBlock txtBlock = new System.Windows.Controls.TextBlock();
+                TextBlock txtBlock = new TextBlock();
                 txtBlock.TextWrapping = TextWrapping.Wrap;
                 txtBlock.Margin = new Thickness(10, 0, 0, 0);
                 txtBlock.Height = 20;
                 txtBlock.VerticalAlignment = VerticalAlignment.Center;
-                txtBlock.Text = dialog.Title.ToString();
+                txtBlock.Text = dialog.Title;
 
                 txtBlock.MouseDown += (sender, e) => OpenDialogAsync(dialog);
                 contacts_list.Children.Add(txtBlock);
             }
-
-            TLContacts result = await client.GetContactsAsync();
-            contacts = result.Users.ToList().Where(x => x.GetType() == typeof(TLUser)).Cast<TLUser>();
+            
             foreach (var contact in contacts)
             {
-                System.Windows.Controls.TextBlock txtBlock = new System.Windows.Controls.TextBlock();
+                TextBlock txtBlock = new TextBlock();
                 txtBlock.TextWrapping = TextWrapping.Wrap;
                 txtBlock.Text = contact.FirstName;
 
-                bool HaveMessages = await DidHaveMessagesAsync(contact);
-                if (HaveMessages)
+                if (await DidHaveMessagesAsync(contact))
                 {
-                    txtBlock.MouseDown += (sender, e) => OpenUserDialogAsync(contact);
+                    txtBlock.MouseDown += (sender, e) => OpenDialogAsync(contact);
                     contacts_list.Children.Add(txtBlock);
                 }
                 else continue;
             }
 
-            bool HasSelfMessages = await DidHaveMessagesAsync(_session.TLUser);
-            if (HasSelfMessages)
+            if (await DidHaveMessagesAsync(_session.TLUser))
             {
-                System.Windows.Controls.TextBlock txtBlock = new System.Windows.Controls.TextBlock();
+                TextBlock txtBlock = new TextBlock();
                 txtBlock.TextWrapping = TextWrapping.Wrap;
                 txtBlock.Text = "Saved Messages";
-                txtBlock.MouseDown += (sender, e) => OpenUserDialogAsync(_session.TLUser);
+                txtBlock.MouseDown += (sender, e) => OpenDialogAsync(_session.TLUser);
                 contacts_list.Children.Add(txtBlock);
             }
-
-            return true;
         }
 
         private async Task<bool> DidHaveMessagesAsync(TLUser contact)
@@ -709,7 +671,6 @@ namespace WpfApp
             {
                 return true;
             }
-            
         }
 
         private void message_enter_txb_GotFocus(object sender, RoutedEventArgs e)
@@ -724,37 +685,25 @@ namespace WpfApp
 
             if (message_enter_txb.Document.Blocks.Count == 0)
                 message_enter_txb.AppendText("Enter Your messasge here");
-
-
         }
 
         private void messages_field_scroll_ScrollChanged(object sender, ScrollChangedEventArgs e)
         {
             if (messages_field.Children.Count >= 50 && messages_field_scroll.VerticalOffset == 0)
             {
-               if (openedDialog.GetType() == typeof(TLUser))
-               {
-                   OpenUserDialogAsync(openedDialog);
-               }
-               else if(openedDialog.GetType() == typeof(TLChannel))
-               {
-                   OpenDialogAsync(openedDialog);
-               }
-               else if (openedDialog.GetType() == typeof(TLChat))
-               {
-                   OpenChatAsync(openedDialog);
-               } 
+                switch (openedDialog)
+                {
+                    case TLChat chat:
+                        OpenDialogAsync(openedDialog);
+                        break;
+                    case TLChannel channel:
+                        OpenDialogAsync(openedDialog);
+                        break;
+                    case TLUser user:
+                        OpenDialogAsync(openedDialog);
+                        break;
+                }
             }
-        }
-
-        private void message_enter_txb_KeyDown(object sender, KeyEventArgs e)
-        {
-            
-        }
-
-        private void message_enter_txb_TextInput(object sender, TextCompositionEventArgs e)
-        {
-            
         }
 
         private void message_enter_txb_TextChanged(object sender, TextChangedEventArgs e)
@@ -784,33 +733,96 @@ namespace WpfApp
                 var messageText = new TextRange(message_enter_txb.Document.ContentStart, message_enter_txb.Document.ContentEnd).Text;
                 if (messageText.Length != 0 && openedDialog != null)
                 {
-                    if (openedDialog.GetType() == typeof(TLChat))
+                    switch (openedDialog)
                     {
-                        await client.SendMessageAsync(new TLInputPeerChat()
-                        {
-                            ChatId = openedDialog.Id
-                        }, messageText);
+                        case TLChat chat:
+                            await client.SendMessageAsync(new TLInputPeerChat()
+                            {
+                                ChatId = openedDialog.Id
+                            }, messageText);
+                            break;
+                        case TLChannel channel:
+                            await client.SendMessageAsync(new TLInputPeerChannel()
+                            {
+                                ChannelId = openedDialog.Id,
+                                AccessHash = openedDialog.AccessHash
+                            }, messageText);
+                            break;
+                        case TLUser user:
+                            await client.SendMessageAsync(new TLInputPeerUser()
+                            {
+                                UserId = openedDialog.Id
+                            }, messageText);
+                            break;
                     }
-                    else if (openedDialog.GetType() == typeof(TLChannel))
+                }
+
+                if (pinnedFile != null)
+                {
+                    int pos = pinnedFile.LastIndexOf("\\") + 1;
+                    string pinnedName = pinnedFile.Substring(pos, pinnedFile.Length - pos);
+
+                    dynamic fileResult;
+                    FileInfo fInfo = new FileInfo(pinnedFile);
+                    if (fInfo.Length > 10485760)
+                        fileResult = (TLInputFileBig)await client.UploadFile(pinnedFile, new StreamReader(pinnedFile));
+                    else
+                        fileResult = (TLInputFile)await client.UploadFile(pinnedFile, new StreamReader(pinnedFile));
+
+                    var dotPos = pinnedFile.LastIndexOf(".") + 1;
+                    string pinnedExtension = pinnedFile.Substring(pos, pinnedFile.Length - pos);
+                    string fileMimeType =  MimeTypeMap.GetMimeType(pinnedExtension);
+
+
+                    switch (openedDialog)
                     {
-                        await client.SendMessageAsync(new TLInputPeerChannel()
-                        {
-                            ChannelId = openedDialog.Id,
-                            AccessHash = openedDialog.AccessHash
-                        }, messageText);
-                    }
-                    else if (openedDialog.GetType() == typeof(TLUser))
-                    {
-                        await client.SendMessageAsync(new TLInputPeerUser()
-                        {
-                            UserId = openedDialog.Id
-                        }, messageText);
+                        case TLChat chat:
+                            await client.SendUploadedDocument(new TLInputPeerChat(){ChatId = openedDialog.Id},
+                                fileResult,
+                                pinnedName,
+                                fileMimeType,
+                                new TLVector<TLAbsDocumentAttribute>());
+                            break;
+                        case TLChannel channel:
+                            await client.SendUploadedDocument(new TLInputPeerChannel() {
+                                ChannelId = openedDialog.Id,
+                                AccessHash = openedDialog.AccessHash
+                            },
+                                fileResult,
+                                pinnedName,
+                                fileMimeType,
+                                new TLVector<TLAbsDocumentAttribute>());
+                            break;
+                        case TLUser user:
+                            await client.SendUploadedDocument(new TLInputPeerUser() { UserId = openedDialog.Id },
+                                fileResult,
+                                pinnedName,
+                                fileMimeType,
+                                new TLVector<TLAbsDocumentAttribute>());
+                            break;
                     }
                 }
             } catch (Exception ex)
             {
-               // MessageBox.Show(ex.Message + " " + ex.Source);
+                MessageBox.Show(ex.ToString());
             }
         }
-    }
+
+        private void pin_file_Click(object sender, RoutedEventArgs e)
+        {
+            Microsoft.Win32.OpenFileDialog chooseFileDlg = new Microsoft.Win32.OpenFileDialog();
+            chooseFileDlg.InitialDirectory = "c:\\";
+            chooseFileDlg.Filter = "All files (*.*)|*.*";
+            chooseFileDlg.RestoreDirectory = true;
+
+            Nullable<bool> result = chooseFileDlg.ShowDialog();
+
+            if (result == true)
+            {
+                pinnedFile = chooseFileDlg.FileName;
+                int pos = pinnedFile.LastIndexOf("\\") + 1;
+                added_file_name.Content = pinnedFile.Substring(pos, pinnedFile.Length - pos);
+            }
+        }
+    }        
 }
