@@ -73,10 +73,11 @@
                 </FlowDocument>
             </RichTextBox>
             <Button x:Name="send_message" Content="Send"  Margin="300,100,80,10" ToolTip="Send message" Click="send_message_Click"/>
-            <Label x:Name="add_file_to_message" Content="" FontFamily="Font Awesome 5 Free Regular" Margin="20,98,389,10" ToolTip="Add File" MouseDown="pin_file_Click"/>
+            <Label x:Name="add_file_to_message" Content="" FontFamily="Font Awesome 5 Free Regular" Margin="20,98,384,10" ToolTip="Add File" MouseDown="pin_file_Click"/>
             <ScrollViewer Margin="44,96,264,0" VerticalScrollBarVisibility="Hidden" HorizontalScrollBarVisibility="Auto">
                 <Label x:Name="added_file_name" Content="" Padding="0"/>
             </ScrollViewer>
+            <Label x:Name="add_file_to_message_Copy" Content="" FontFamily="Font Awesome 5 Free Solid" Margin="44,98,361,10" ToolTip="Add File" MouseDown="pin_photo_Click"/>
         </Grid>
 
         <ScrollViewer x:Name="messages_field_scroll" Grid.Column="1" Grid.Row="1" VerticalScrollBarVisibility="Auto" ScrollChanged="messages_field_scroll_ScrollChanged" >
