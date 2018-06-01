@@ -70,6 +70,7 @@ namespace WpfApp
 
         private TelegramClient client;
         private TLUser user = null;
+        private List<TLChannel> megagroupsList = new List<TLChannel>();
 
         public MainWindow()
         {
@@ -615,7 +616,7 @@ namespace WpfApp
                                 break;
                             default:
                                 {
-                                    //MessageBox.Show(message.Media.GetType().ToString());
+                                    MessageBox.Show(message.Media.GetType().ToString());
                                     break;
                                 }
                         }
@@ -636,59 +637,29 @@ namespace WpfApp
 
         private async Task GetDialogsAsync()
         {
-            var dialogs = await client.GetUserDialogsAsync() as TLDialogs;
-            var chats = dialogs.Chats.Where(x => x.GetType() == typeof(TLChannel)).Cast<TLChannel>();
-            var userChats = dialogs.Chats.Where(x => x.GetType() == typeof(TLChat)).Cast<TLChat>();
-            TLContacts result = await client.GetContactsAsync();
-            contacts = result.Users.ToList().Where(x => x.GetType() == typeof(TLUser)).Cast<TLUser>();
-
-            foreach (var chat in userChats)
+            if (!chats_list.HasContent)
             {
-                TextBlock txtBlock = new TextBlock();
-                txtBlock.TextWrapping = TextWrapping.Wrap;
-                txtBlock.Margin = new Thickness(10, 0, 0, 0);
-                txtBlock.Height = 20;
-                txtBlock.VerticalAlignment = VerticalAlignment.Center;
-                txtBlock.Text = chat.Title;
+                TLContacts result = await client.GetContactsAsync();
+                contacts = result.Users.ToList().Where(x => x.GetType() == typeof(TLUser)).Cast<TLUser>();
 
-                txtBlock.MouseDown += (sender, e) => OpenDialogAsync(chat);
-                contacts_list.Children.Add(txtBlock);
-            }
+                ListBox usersList = new ListBox();
 
-            foreach (var dialog in chats)
-            {
-                TextBlock txtBlock = new TextBlock();
-                txtBlock.TextWrapping = TextWrapping.Wrap;
-                txtBlock.Margin = new Thickness(10, 0, 0, 0);
-                txtBlock.Height = 20;
-                txtBlock.VerticalAlignment = VerticalAlignment.Center;
-                txtBlock.Text = dialog.Title;
+                TextBlock savedMessages = new TextBlock();
+                savedMessages.Height = 20;
+                savedMessages.Text = "Saved Messages";
+                savedMessages.MouseDown += (sender, e) => OpenDialogAsync(_session.TLUser);
+                usersList.Items.Add(savedMessages);
 
-                txtBlock.MouseDown += (sender, e) => OpenDialogAsync(dialog);
-                contacts_list.Children.Add(txtBlock);
-            }
-            
-            foreach (var contact in contacts)
-            {
-                TextBlock txtBlock = new TextBlock();
-                txtBlock.TextWrapping = TextWrapping.Wrap;
-                txtBlock.Text = contact.FirstName;
-
-                if (await DidHaveMessagesAsync(contact))
+                foreach (var contact in contacts)
                 {
+                    TextBlock txtBlock = new TextBlock();
+                    txtBlock.Height = 20;
+                    txtBlock.Text = contact.FirstName;
                     txtBlock.MouseDown += (sender, e) => OpenDialogAsync(contact);
-                    contacts_list.Children.Add(txtBlock);
+                    usersList.Items.Add(txtBlock);
                 }
-                else continue;
-            }
 
-            if (await DidHaveMessagesAsync(_session.TLUser))
-            {
-                TextBlock txtBlock = new TextBlock();
-                txtBlock.TextWrapping = TextWrapping.Wrap;
-                txtBlock.Text = "Saved Messages";
-                txtBlock.MouseDown += (sender, e) => OpenDialogAsync(_session.TLUser);
-                contacts_list.Children.Add(txtBlock);
+                contacts_list.Content = usersList;
             }
         }
 
@@ -903,6 +874,84 @@ namespace WpfApp
                 isPhotoPinned = true;
                 int pos = pinnedFile.LastIndexOf("\\") + 1;
                 added_file_name.Content = pinnedFile.Substring(pos, pinnedFile.Length - pos);
+            }
+        }
+
+        private async void contactsTab_Clicked(object sender, MouseButtonEventArgs e)
+        {
+            
+        }
+
+        private async void channelsTab_Clicked(object sender, MouseButtonEventArgs e)
+        {
+            if (!chats_list.HasContent)
+            {
+                var dialogs = await client.GetUserDialogsAsync() as TLDialogs;
+                var chats = dialogs.Chats.Where(x => x.GetType() == typeof(TLChannel)).Cast<TLChannel>();
+
+                ListBox chatsPanel = new ListBox();
+                foreach (var dialog in chats)
+                {
+                    if (!dialog.Megagroup)
+                    {
+                        TextBlock txtBlock = new TextBlock();
+                        txtBlock.Height = 20;
+                        txtBlock.Text = dialog.Title;
+                        txtBlock.MouseDown += (sendered, ev) => OpenDialogAsync(dialog);
+                        chatsPanel.Items.Add(txtBlock);
+                    }
+                    else
+                    {
+                        megagroupsList.Add(dialog);
+                    }
+                }
+                channels_list.Content = chatsPanel;
+            }
+        }
+
+        private async void chatsTab_Clicked(object sender, MouseButtonEventArgs e)
+        {
+            if (!chats_list.HasContent)
+            {
+                var dialogs = await client.GetUserDialogsAsync() as TLDialogs;
+                var userChats = dialogs.Chats.Where(x => x.GetType() == typeof(TLChat)).Cast<TLChat>();
+
+                ListBox chatsPanel = new ListBox();
+                foreach (var chat in userChats)
+                {
+                    TextBlock txtBlock = new TextBlock();
+                    txtBlock.Height = 20;
+                    txtBlock.Text = chat.Title;
+
+                    txtBlock.MouseDown += (senderer, ev) => OpenDialogAsync(chat);
+                    chatsPanel.Items.Add(txtBlock);
+                }
+                if (megagroupsList.Count == 0)
+                {
+                    var chats = dialogs.Chats.Where(x => x.GetType() == typeof(TLChannel)).Cast<TLChannel>();
+                    foreach (var dialog in chats)
+                    {
+                        if (dialog.Megagroup)
+                        {
+                            megagroupsList.Add(dialog);
+                        }
+                    }
+                }
+
+                foreach (var dialog in megagroupsList.ToList())
+                {
+                    if (dialog.Megagroup)
+                    {
+                        TextBlock txtBlock = new TextBlock();
+                        txtBlock.Height = 20;
+                        txtBlock.Text = dialog.Title;
+                        txtBlock.MouseDown += (sendered, ev) => OpenDialogAsync(dialog);
+                        chatsPanel.Items.Add(txtBlock);
+                        megagroupsList.Add(dialog);
+                    }
+                }
+
+                chats_list.Content = chatsPanel;
             }
         }
     }        

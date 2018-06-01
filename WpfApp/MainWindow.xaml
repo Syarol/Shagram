@@ -14,8 +14,8 @@
     <Grid>
 
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="197*" />
-            <ColumnDefinition Width="428*" />
+            <ColumnDefinition Width="200" />
+            <ColumnDefinition Width="50*" />
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
             <RowDefinition Height="25"/>
@@ -23,7 +23,7 @@
             <RowDefinition Height="1*" />
         </Grid.RowDefinitions>
 
-        <Grid Grid.Column="0" Grid.Row="0" Grid.RowSpan="3"  HorizontalAlignment="Left" Background="#FF93C6F9" Grid.ColumnSpan="2" Width="197">
+        <Grid Grid.Column="0" Grid.Row="0" Grid.RowSpan="3"  HorizontalAlignment="Left" Background="#0088CC" Grid.ColumnSpan="2" Width="200">
 
             <Grid Grid.Row="0" VerticalAlignment="Center">
                 <Label x:Name="open_options" Width="20" HorizontalAlignment="Left" Content="&#xf0c9;" FontFamily="Font Awesome 5 Free Solid" Margin="5,0,0,0" ToolTip="Options"/>
@@ -38,11 +38,26 @@
 
             <!--<DataGrid x:Name="contacts_grid" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" Margin="0,153,0,0"/>
 -->
-            <ScrollViewer  Grid.Row="2" VerticalScrollBarVisibility="Auto">
-                <StackPanel x:Name="contacts_list">
+            <!--<ScrollViewer  VerticalScrollBarVisibility="Auto">-->
+                <TabControl  Grid.Row="2" Name="tcSample" Background="#0088cc">
+                    <TabItem x:Name="contacts_list">
+                        <TabItem.Header>
+                            <Label Content="Contacts" MouseLeftButtonDown="contactsTab_Clicked" HorizontalAlignment="Stretch"/>
+                        </TabItem.Header>
+                    </TabItem>
+                    <TabItem x:Name="channels_list" VerticalAlignment="Bottom">
+                        <TabItem.Header>
+                            <Label Content="Channels" MouseLeftButtonDown="channelsTab_Clicked" HorizontalAlignment="Stretch"/>
+                        </TabItem.Header>
+                    </TabItem>
+                    <TabItem x:Name="chats_list">
+                        <TabItem.Header>
+                            <Label Content="Chats" MouseLeftButtonDown="chatsTab_Clicked" HorizontalAlignment="Stretch"/>
+                        </TabItem.Header>
+                    </TabItem>
+                </TabControl>
 
-                </StackPanel>
-            </ScrollViewer>
+            <!--</ScrollViewer>-->
 
 
             <Grid.RowDefinitions>
@@ -65,19 +80,19 @@
             <Label Grid.Column="3" x:Name="window_close" Content="&#xF410;" FontFamily="Font Awesome 5 Free Regular" FontSize="14" Cursor="Hand" ToolTip="Close" MouseDown="window_close_MouseDown"/>
             <Rectangle Grid.Column="0" x:Name="top_bar" Fill="#FFF4F4F5" MouseDown="top_bar_MouseDown"/>
         </Grid>
-        
-        <Grid x:Name="write_text_field" Grid.Column="1"  Grid.Row="2" VerticalAlignment="Bottom" Background="Aqua" Height="131">
+
+        <Grid x:Name="write_text_field" Grid.Column="1"  Grid.Row="2" VerticalAlignment="Bottom" Background="#0088cc" Height="131">
             <RichTextBox x:Name="message_enter_txb" Margin="20,20,80,35" GotFocus="message_enter_txb_GotFocus" LostFocus="message_enter_txb_LostFocus" TextChanged="message_enter_txb_TextChanged">
                 <FlowDocument>
                     <Paragraph>Enter Your message here</Paragraph>
                 </FlowDocument>
             </RichTextBox>
-            <Button x:Name="send_message" Content="Send"  Margin="300,100,80,10" ToolTip="Send message" Click="send_message_Click"/>
+            <Button x:Name="send_message" Content="Send"  Margin="300,100,70,10" ToolTip="Send message" Click="send_message_Click" Width="50"/>
             <Label x:Name="add_file_to_message" Content="" FontFamily="Font Awesome 5 Free Regular" Margin="20,98,384,10" ToolTip="Add File" MouseDown="pin_file_Click"/>
-            <ScrollViewer Margin="44,96,264,0" VerticalScrollBarVisibility="Hidden" HorizontalScrollBarVisibility="Auto">
+            <ScrollViewer Margin="70,96,180,0" VerticalScrollBarVisibility="Hidden" HorizontalScrollBarVisibility="Auto">
                 <Label x:Name="added_file_name" Content="" Padding="0"/>
             </ScrollViewer>
-            <Label x:Name="add_file_to_message_Copy" Content="" FontFamily="Font Awesome 5 Free Solid" Margin="44,98,361,10" ToolTip="Add File" MouseDown="pin_photo_Click"/>
+            <Label x:Name="add_file_to_message_Copy" Content="" FontFamily="Font Awesome 5 Free Solid" Margin="44,98,358,10" ToolTip="Add File" MouseDown="pin_photo_Click"/>
         </Grid>
 
         <ScrollViewer x:Name="messages_field_scroll" Grid.Column="1" Grid.Row="1" VerticalScrollBarVisibility="Auto" ScrollChanged="messages_field_scroll_ScrollChanged" >
