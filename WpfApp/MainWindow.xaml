@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:WpfApp"
         xmlns:emoji="clr-namespace:Emoji.Wpf;assembly=Emoji.Wpf"
         mc:Ignorable="d"
-        Title="Telegram" Height="550" Width="625" WindowStyle="None"
+        Title="Telegram" Height="550" Width="650" WindowStyle="None"
         ResizeMode="CanResizeWithGrip" AllowsTransparency="True"
         WindowState="Normal"
         WindowStartupLocation="CenterScreen" Loaded="Window_Loaded"
@@ -40,7 +40,7 @@
 -->
             <!--<ScrollViewer  VerticalScrollBarVisibility="Auto">-->
                 <TabControl  Grid.Row="2" Name="tcSample" Background="#0088cc">
-                    <TabItem x:Name="contacts_list">
+                <TabItem x:Name="contacts_list" VerticalAlignment="Bottom">
                         <TabItem.Header>
                             <Label Content="Contacts" MouseLeftButtonDown="contactsTab_Clicked" HorizontalAlignment="Stretch"/>
                         </TabItem.Header>
@@ -50,7 +50,7 @@
                             <Label Content="Channels" MouseLeftButtonDown="channelsTab_Clicked" HorizontalAlignment="Stretch"/>
                         </TabItem.Header>
                     </TabItem>
-                    <TabItem x:Name="chats_list">
+                    <TabItem x:Name="chats_list" VerticalAlignment="Bottom" Margin="-2,0,-11,0">
                         <TabItem.Header>
                             <Label Content="Chats" MouseLeftButtonDown="chatsTab_Clicked" HorizontalAlignment="Stretch"/>
                         </TabItem.Header>
@@ -96,7 +96,7 @@
         </Grid>
 
         <ScrollViewer x:Name="messages_field_scroll" Grid.Column="1" Grid.Row="1" VerticalScrollBarVisibility="Auto" ScrollChanged="messages_field_scroll_ScrollChanged" >
-            <StackPanel x:Name="messages_field" Background="AntiqueWhite" VerticalAlignment="Bottom">
+            <StackPanel x:Name="messages_field" VerticalAlignment="Bottom">
                 
             </StackPanel>
         </ScrollViewer>

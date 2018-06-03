@@ -38,7 +38,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="BigMath, Version=0.5.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\TLSharp.0.1.0.371\lib\net45\BigMath.dll</HintPath>
+      <HintPath>..\packages\TLSharp.0.1.0.374\lib\net45\BigMath.dll</HintPath>
     </Reference>
     <Reference Include="DotNetZip, Version=1.11.0.0, Culture=neutral, PublicKeyToken=6583c7c814667745, processorArchitecture=MSIL">
       <HintPath>..\packages\DotNetZip.1.11.0\lib\net20\DotNetZip.dll</HintPath>
@@ -47,13 +47,13 @@
       <HintPath>..\packages\Emoji.Wpf.0.0.13-experimental\lib\net30\Emoji.Wpf.dll</HintPath>
     </Reference>
     <Reference Include="Ionic.ZLib, Version=2.0.0.14, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\TLSharp.0.1.0.371\lib\net45\Ionic.ZLib.dll</HintPath>
+      <HintPath>..\packages\TLSharp.0.1.0.374\lib\net45\Ionic.ZLib.dll</HintPath>
     </Reference>
     <Reference Include="MimeTypeMap, Version=2.1.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\MediaTypeMap.2.1.0.0\lib\net40\MimeTypeMap.dll</HintPath>
     </Reference>
-    <Reference Include="RestSharp, Version=106.2.2.0, Culture=neutral, PublicKeyToken=598062e77f915f75, processorArchitecture=MSIL">
-      <HintPath>..\packages\RestSharp.106.2.2\lib\net452\RestSharp.dll</HintPath>
+    <Reference Include="RestSharp, Version=106.3.0.0, Culture=neutral, PublicKeyToken=598062e77f915f75, processorArchitecture=MSIL">
+      <HintPath>..\packages\RestSharp.106.3.0\lib\net452\RestSharp.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
@@ -72,10 +72,10 @@
       <HintPath>..\packages\TeleSharp.1.0.5\lib\TeleBot.dll</HintPath>
     </Reference>
     <Reference Include="TeleSharp.TL, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\TLSharp.0.1.0.371\lib\net45\TeleSharp.TL.dll</HintPath>
+      <HintPath>..\packages\TLSharp.0.1.0.374\lib\net45\TeleSharp.TL.dll</HintPath>
     </Reference>
     <Reference Include="TLSharp.Core, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\TLSharp.0.1.0.371\lib\net45\TLSharp.Core.dll</HintPath>
+      <HintPath>..\packages\TLSharp.0.1.0.374\lib\net45\TLSharp.Core.dll</HintPath>
     </Reference>
     <Reference Include="Typography.GlyphLayout, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\Emoji.Wpf.0.0.13-experimental\lib\net30\Typography.GlyphLayout.dll</HintPath>

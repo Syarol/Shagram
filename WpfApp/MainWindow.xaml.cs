@@ -69,19 +69,12 @@ namespace WpfApp
         private bool isPhotoPinned;
 
         private TelegramClient client;
-        private TLUser user = null;
         private List<TLChannel> megagroupsList = new List<TLChannel>();
+        private TLDialogs dialogsList = new TLDialogs();
 
         public MainWindow()
         {
             InitializeComponent();
-        }
-
-        public MainWindow(TLUser getUser)
-        {
-            InitializeComponent();
-
-            user = getUser;
         }
 
         private void window_close_MouseDown(object sender, MouseButtonEventArgs e)
@@ -134,11 +127,7 @@ namespace WpfApp
                     var photo = await GetUserPhotoAsync(_session.TLUser);
                     img_userPhoto.ImageSource = ByteToImage(photo.Bytes);
 
-                    //await Task.Run(() => GetContactsAsync());
-                    //await Task.Run(() => GetDialogsAsync());
-                    //await Task.WhenAll(GetContactsAsync, GetDialogsAsync);
-                    await Task.WhenAll(GetDialogsAsync());
-
+                    await Task.WhenAll(GetDialogsOnStartAsync());
                 }
             } 
             catch (Exception ex)
@@ -182,7 +171,22 @@ namespace WpfApp
             }, 512 * 1024, 0);
 
             return resFile;
-        } 
+        }
+
+        private async Task<TLFile> GetChannelPhotoAsync(TLChannel channel)
+        {
+            var photo = ((TLChatPhoto)channel.Photo);
+            var photoLocation = (TLFileLocation)photo.PhotoSmall;
+
+            var resFile = await client.GetFile(new TLInputFileLocation()
+            {
+                LocalId = photoLocation.LocalId,
+                Secret = photoLocation.Secret,
+                VolumeId = photoLocation.VolumeId
+            }, 512 * 1024, 0);
+
+            return resFile;
+        }
 
         private async void OpenDialogAsync(dynamic dialog)
         {
@@ -245,7 +249,7 @@ namespace WpfApp
                             Peer = new TLInputPeerChannel { ChannelId = dialog.Id, AccessHash = dialog.AccessHash }
                         };
 
-                        OpenMessagesAsync(await client.SendRequestAsync<TLChannelMessages>(req));
+                        OpenMessagesAsync(await client.SendRequestAsync<TLChannelMessages>(req), item);
                         break;
                     case TLChat item:
                         req = new TLRequestGetHistory
@@ -398,117 +402,193 @@ namespace WpfApp
             }
         }
 
-        private async void OpenMessagesAsync(TLChannelMessages messages)
+        private async void OpenMessagesAsync(TLChannelMessages messages, TLChannel channel)
         {
             try
             {
                 foreach (var chatMessage in messages.Messages)
                 {
-                    StackPanel txtBlockWrapper = new StackPanel();
-                    txtBlockWrapper.Orientation = Orientation.Vertical;
+                    Border gridBorder = new Border();
+                    gridBorder.Margin = new Thickness(10, 0, 10, 10);
+                    //gridBorder.CornerRadius = new CornerRadius(10);
+                    //gridBorder.BorderThickness = new Thickness(1, 1, 1, 1);
+                    //gridBorder.BorderBrush = (SolidColorBrush)(new BrushConverter().ConvertFrom("#c3c3c3"));
+                    //gridBorder.Background = System.Windows.Media.Brushes.LightYellow;
+                    gridBorder.Width = 400;
+                    gridBorder.HorizontalAlignment = HorizontalAlignment.Left;
+                    gridBorder.VerticalAlignment = VerticalAlignment.Top;
 
-                    TextBlock txtBlock = new TextBlock();
-                    txtBlock.TextWrapping = TextWrapping.Wrap;
-                    txtBlock.Margin = new Thickness(10, 0, 0, 0);
-                    txtBlock.VerticalAlignment = VerticalAlignment.Center;
-                    try
+                    Grid messageBlockWrapper = new Grid();
+                    gridBorder.Child = messageBlockWrapper;
+                    ColumnDefinition gridCol1 = new ColumnDefinition();
+                    ColumnDefinition gridCol2 = new ColumnDefinition();
+                    gridCol1.Width = new GridLength(50);
+                    messageBlockWrapper.ColumnDefinitions.Add(gridCol1);
+                    messageBlockWrapper.ColumnDefinitions.Add(gridCol2);
+
+                    Ellipse userPhoto = new Ellipse();
+                        userPhoto.Margin = new Thickness(0, 5, 0, 0);
+                        userPhoto.VerticalAlignment = VerticalAlignment.Top;
+                        userPhoto.SetValue(Grid.ColumnProperty, 0);
+                        userPhoto.Height = 40;
+                        userPhoto.Width = 40;
+                        ImageBrush userMainPhoto = new ImageBrush();
+                        var photoChannel = await GetChannelPhotoAsync(channel);
+                        userMainPhoto.ImageSource = ByteToImage(photoChannel.Bytes);
+                        userPhoto.Fill = userMainPhoto;
+                        messageBlockWrapper.Children.Add(userPhoto);
+
+                    StackPanel messageBlock = new StackPanel();
+                        userPhoto.SetValue(Grid.ColumnProperty, 1);
+                        messageBlock.Orientation = Orientation.Vertical;
+                        messageBlockWrapper.Children.Add(messageBlock);
+
+                    Label sender = new Label();
+                        sender.FontWeight = FontWeights.Bold;
+                        sender.Content = channel.Title;
+                        messageBlock.Children.Add(sender);
+
+                    StackPanel txtBox = new StackPanel();
+                        messageBlock.Children.Add(txtBox);
+
+                    Label time = new Label();
+                    //time.Foreground = System.Windows.Media.Brushes.Red;
+                    time.FontSize = 10;
+                    time.HorizontalContentAlignment = HorizontalAlignment.Right;
+                    if (chatMessage.GetType() == typeof(TLMessage))
                     {
-                        switch (chatMessage)
-                        {
-                            case TLMessage message:
+                        var message = (TLMessage)chatMessage;
+                        DateTime messageTime = TimeUnixTOWindows(message.Date, true);
+                        time.Content = messageTime.Hour + ":" + messageTime.Minute;
+                    }
+                    else if (chatMessage.GetType() == typeof(TLMessage))
+                    {
+                        var message = (TLMessageService)chatMessage;
+                        DateTime messageTime = TimeUnixTOWindows(message.Date, true);
+                        time.Content = messageTime.Hour + ":" + messageTime.Minute;
+                    }
+                    messageBlock.Children.Add(time);
+
+                    Grid.SetColumn(userPhoto, 0);
+                    Grid.SetColumn(messageBlock, 1);
+
+                    switch (chatMessage)
+                    {
+                        case TLMessage message:
+                            {
+                                if (message.Message != "")
                                 {
-                                    if (message.Message != "")
+                                    TextBlock txtBlock = new TextBlock();
+                                    txtBlock.TextWrapping = TextWrapping.Wrap;
+                                    txtBox.Children.Add(txtBlock);
+
+                                    string startMessage = message.Message;
+                                    Regex reg = new Regex(LinkPattern, RegexOptions.Compiled | RegexOptions.IgnoreCase);
+                                    if (reg.IsMatch(startMessage))
                                     {
-                                        string startMessage = message.Message;
-                                        Regex reg = new Regex(LinkPattern, RegexOptions.Compiled | RegexOptions.IgnoreCase);
-                                        if (reg.IsMatch(startMessage))
+                                        foreach (Match match in reg.Matches(message.Message))
                                         {
-                                            foreach (Match match in reg.Matches(message.Message))
+                                            int i = match.Index;
+                                            int f = match.Length;
+
+                                            TextBlock text = new TextBlock();
+                                            text.Text = startMessage.Substring(0, i);
+                                            //txtBlock.Children.Add(text);
+
+                                            Run linkText = new Run(match.ToString());
+                                            Hyperlink link = new Hyperlink(linkText)
                                             {
-                                                int i = match.Index;
-                                                int f = match.Length;
+                                                NavigateUri = new Uri("http://" + match.ToString())
+                                            };
+                                            link.RequestNavigate += new RequestNavigateEventHandler(delegate (object senderee, RequestNavigateEventArgs e)
+                                            {
+                                                Process.Start(new ProcessStartInfo(e.Uri.AbsoluteUri));
+                                                e.Handled = true;
+                                            });
 
-                                                TextBlock text = new TextBlock();
-                                                text.Text = startMessage.Substring(0, i);
-                                                txtBlockWrapper.Children.Add(text);
-
-                                                Run linkText = new Run(match.ToString());
-                                                Hyperlink link = new Hyperlink(linkText)
-                                                {
-                                                    NavigateUri = new Uri("http://" + match.ToString())
-                                                };
-                                                link.RequestNavigate += new RequestNavigateEventHandler(delegate (object sender, RequestNavigateEventArgs e) {
-                                                    Process.Start(new ProcessStartInfo(e.Uri.AbsoluteUri));
-                                                    e.Handled = true;
-                                                });
-
-                                                txtBlock.Inlines.Add(link);
-                                                startMessage.Replace(startMessage.Substring(0, f), "");
-                                            }
-                                        } else                                         
-                                        txtBlock.Text = message.Message;
-                                        txtBlockWrapper.Children.Add(txtBlock);
+                                            txtBlock.Inlines.Add(link);
+                                            startMessage.Replace(startMessage.Substring(0, f), "");
+                                        }
                                     }
+                                    else txtBlock.Text = message.Message;
+                                    //txtBlockWrapper.Children.Add(messageBox);
+                                }
 
-                                    switch (message.Media)
-                                    {
-                                        case TLMessageMediaPhoto item:
+                                switch (message.Media)
+                                {
+                                    case TLMessageMediaPhoto item:
+                                        {
+                                            System.Windows.Controls.Image photo = new System.Windows.Controls.Image();
+                                            photo.Height = 200;
+                                            photo.Width = 200;
+                                            var messagePhoto = await GetMessagePhotoAsync(item);
+                                            photo.Source = ByteToImage(messagePhoto.Bytes);
+                                            txtBox.Children.Add(photo);
+
+                                            if (item.Caption != "")
                                             {
-                                                System.Windows.Controls.Image photo = new System.Windows.Controls.Image();
-                                                photo.Height = 200;
-                                                photo.Width = 200;
-                                                var messagePhoto = await GetMessagePhotoAsync(item);
-                                                photo.Source = ByteToImage(messagePhoto.Bytes);
-                                                txtBlockWrapper.Children.Add(photo);
-
-                                                if (item.Caption != "")
-                                                {
-                                                    txtBlock.Text = item.Caption;
-                                                    txtBlockWrapper.Children.Add(txtBlock);
-                                                }
-                                                break;
-                                            }
-                                        case TLMessageMediaDocument item:
-                                            TLDocument doc = (TLDocument)item.Document;
-                                            foreach (var att in doc.Attributes.ToList())
-                                            {
-                                                switch (att)
-                                                {
-                                                    case TLDocumentAttributeVideo video:
-
-                                                        break;
-                                                    case TLDocumentAttributeAudio audio:
-
-                                                        break;
-                                                    case TLDocumentAttributeSticker sticker:
-
-                                                        break;
-                                                }
+                                                TextBlock txtBlock = new TextBlock();
+                                                txtBlock.TextWrapping = TextWrapping.Wrap;
+                                                txtBox.Children.Add(txtBlock);
+                                                txtBlock.Text = item.Caption;
+                                                //messageBlockWrapper.Children.Add(txtBlock);
                                             }
                                             break;
-                                    }
-                                    break;
+                                        }
+                                    case TLMessageMediaDocument item:
+                                        TLDocument doc = (TLDocument)item.Document;
+                                        foreach (var att in doc.Attributes.ToList())
+                                        {
+                                            switch (att)
+                                            {
+                                                case TLDocumentAttributeVideo video:
+
+                                                    break;
+                                                case TLDocumentAttributeAudio audio:
+
+                                                    break;
+                                                case TLDocumentAttributeSticker sticker:
+
+                                                    break;
+                                            }
+                                        }
+                                        break;
                                 }
-                            case TLMessageService message:
-                                {
-                                    txtBlock.TextAlignment = TextAlignment.Center;
-                                    dynamic action = message.Action;
-                                    txtBlock.Text = ServiceMessageHandler(action).ToString();
-                                    txtBlockWrapper.Children.Add(txtBlock);
-                                    break;
-                                }
-                        }
+                                break;
+                            }
+                        case TLMessageService message:
+                            {
+                                TextBlock txtBlock = new TextBlock();
+                                txtBlock.TextWrapping = TextWrapping.Wrap;
+                                txtBox.Children.Add(txtBlock);
+
+                                MessageBox.Show(message.Date.ToString());
+                                txtBlock.TextAlignment = TextAlignment.Center;
+                                dynamic action = message.Action;
+                                txtBlock.Text = ServiceMessageHandler(action).ToString();
+                                messageBlock.Children.Add(txtBlock);
+                                break;
+                            }
                     }
-                    catch (Exception ex)
-                    {
-                        MessageBox.Show(ex.ToString());
-                        Application.Current.Shutdown();
-                    }
-                    messages_field.Children.Insert(0, txtBlockWrapper);
+                    messages_field.Children.Insert(0, /*messageBlockWrapper*/gridBorder);
                 }
-            } catch(Exception ex)
+            }
+            catch (Exception ex)
             {
                 MessageBox.Show(ex.ToString());
+            }
+        }
+
+        private static DateTime TimeUnixTOWindows(int TimestampToConvert, bool Local)
+        {
+            var mdt = new DateTime(1970, 1, 1, 0, 0, 0);
+            if (Local)
+            {
+                return mdt.AddSeconds(TimestampToConvert).ToLocalTime();
+            }
+            else
+            {
+                return mdt.AddSeconds(TimestampToConvert);
             }
         }
 
@@ -635,8 +715,10 @@ namespace WpfApp
             }
         }
 
-        private async Task GetDialogsAsync()
+        private async Task GetDialogsOnStartAsync()
         {
+            dialogsList = await client.GetUserDialogsAsync() as TLDialogs;
+
             if (!chats_list.HasContent)
             {
                 TLContacts result = await client.GetContactsAsync();
@@ -877,17 +959,16 @@ namespace WpfApp
             }
         }
 
-        private async void contactsTab_Clicked(object sender, MouseButtonEventArgs e)
+        private void contactsTab_Clicked(object sender, MouseButtonEventArgs e)
         {
             
         }
 
-        private async void channelsTab_Clicked(object sender, MouseButtonEventArgs e)
+        private void channelsTab_Clicked(object sender, MouseButtonEventArgs e)
         {
             if (!chats_list.HasContent)
             {
-                var dialogs = await client.GetUserDialogsAsync() as TLDialogs;
-                var chats = dialogs.Chats.Where(x => x.GetType() == typeof(TLChannel)).Cast<TLChannel>();
+                var chats = dialogsList.Chats.Where(x => x.GetType() == typeof(TLChannel)).Cast<TLChannel>();
 
                 ListBox chatsPanel = new ListBox();
                 foreach (var dialog in chats)
@@ -909,12 +990,11 @@ namespace WpfApp
             }
         }
 
-        private async void chatsTab_Clicked(object sender, MouseButtonEventArgs e)
+        private void chatsTab_Clicked(object sender, MouseButtonEventArgs e)
         {
             if (!chats_list.HasContent)
             {
-                var dialogs = await client.GetUserDialogsAsync() as TLDialogs;
-                var userChats = dialogs.Chats.Where(x => x.GetType() == typeof(TLChat)).Cast<TLChat>();
+                var userChats = dialogsList.Chats.Where(x => x.GetType() == typeof(TLChat)).Cast<TLChat>();
 
                 ListBox chatsPanel = new ListBox();
                 foreach (var chat in userChats)
@@ -928,7 +1008,7 @@ namespace WpfApp
                 }
                 if (megagroupsList.Count == 0)
                 {
-                    var chats = dialogs.Chats.Where(x => x.GetType() == typeof(TLChannel)).Cast<TLChannel>();
+                    var chats = dialogsList.Chats.Where(x => x.GetType() == typeof(TLChannel)).Cast<TLChannel>();
                     foreach (var dialog in chats)
                     {
                         if (dialog.Megagroup)
