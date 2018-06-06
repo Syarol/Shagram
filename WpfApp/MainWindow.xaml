@@ -80,7 +80,7 @@
             <Rectangle Grid.Column="0" x:Name="top_bar" Fill="#FFF4F4F5" MouseDown="top_bar_MouseDown"/>
         </Grid>
 
-        <Grid x:Name="write_text_field" Grid.Column="1"  Grid.Row="2" VerticalAlignment="Bottom" Background="#0088cc" Height="131">
+        <Grid x:Name="write_text_field" Grid.Column="1"  Grid.Row="2" VerticalAlignment="Bottom" Background="#0088cc" Height="0">
             <RichTextBox x:Name="message_enter_txb" Margin="20,20,80,35" GotFocus="message_enter_txb_GotFocus" LostFocus="message_enter_txb_LostFocus" TextChanged="message_enter_txb_TextChanged">
                 <FlowDocument>
                     <Paragraph>Enter Your message here</Paragraph>
@@ -101,6 +101,7 @@
             </StackPanel>
         </ScrollViewer>
 
+        <Label x:Name="choose_dialog_label" Grid.Column="1" Grid.Row="1" Grid.RowSpan="3" Content="Choose dialog to begin messaging" VerticalAlignment="Center" HorizontalAlignment="Center" FontSize="25"/>
     </Grid>
 
 </Window>

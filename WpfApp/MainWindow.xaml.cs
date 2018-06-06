@@ -54,6 +54,7 @@ namespace WpfApp
         private List<TLChannel> megagroupsList = new List<TLChannel>();
         private TLDialogs dialogsList = new TLDialogs();
         private string EnterYourMessageHere;
+        private ImageSource nullPhoto;
 
         public MainWindow()
         {
@@ -104,6 +105,8 @@ namespace WpfApp
                 }
                 else
                 {
+                    nullPhoto = img_userPhoto.ImageSource;
+
                     string userName = _session.TLUser.FirstName + " " + _session.TLUser.LastName;
                     user_name.Content = userName;
 
@@ -177,6 +180,11 @@ namespace WpfApp
         {
             try
             {
+                if (choose_dialog_label.Visibility == Visibility.Visible)
+                {
+                    choose_dialog_label.Visibility = Visibility.Hidden;
+                }
+
                 if (write_text_field.Height == 0)
                 {
                     if (dialog.GetType() == typeof(TLChannel))
@@ -184,17 +192,33 @@ namespace WpfApp
                         if (!dialog.Megagroup)
                         {
                             write_text_field.Height = 0;
-                            //messages_field_scroll.Height = ;
+                            Grid.SetRowSpan(messages_field_scroll, 3);
                         }
                         else if (dialog.Megagroup)
                         {
                             write_text_field.Height = 131;
+                            Grid.SetRowSpan(messages_field_scroll, 1);
                         }
                     }
                     else
                     {
                         write_text_field.Height = 131;
-                        //messages_field_scroll.Height = ;
+                        Grid.SetRowSpan(messages_field_scroll, 1);
+                    }
+                } else
+                {
+                    if (dialog.GetType() == typeof(TLChannel))
+                    {
+                        if (!dialog.Megagroup)
+                        {
+                            write_text_field.Height = 0;
+                            Grid.SetRowSpan(messages_field_scroll, 3);
+                        }
+                        else if (dialog.Megagroup)
+                        {
+                            write_text_field.Height = 131;
+                            Grid.SetRowSpan(messages_field_scroll, 1);
+                        }
                     }
                 }              
 
@@ -315,7 +339,16 @@ namespace WpfApp
             {
                 string mainUserMessageTitle = _session.TLUser.FirstName + " " + _session.TLUser.LastName;
                 string userMessageTitle = user.FirstName + " " + user.LastName;
-                TLFile userPhotoFile = await GetUserPhotoAsync(user);
+                ImageSource userPhotoFile;
+                try
+                {
+                    TLFile tempPhotoFile = await GetUserPhotoAsync(user);
+                    userPhotoFile = ByteToImage(tempPhotoFile.Bytes); 
+                }
+                catch (NullReferenceException ex)
+                {
+                    userPhotoFile = nullPhoto;
+                }
                 string messageSender = "";
 
                 foreach (var chatMessage in messages.Messages)
@@ -347,7 +380,7 @@ namespace WpfApp
                         }
                         else
                         {
-                            userMainPhoto.ImageSource = ByteToImage(userPhotoFile.Bytes);
+                            userMainPhoto.ImageSource = userPhotoFile;
                             messageSender = userMessageTitle;
                         }
 
@@ -777,7 +810,16 @@ namespace WpfApp
         {
             string mainUserMessageTitle = _session.TLUser.FirstName + " " + _session.TLUser.LastName;
             string userMessageTitle = user.FirstName + " " + user.LastName;
-            TLFile userPhotoFile = await GetUserPhotoAsync(user);
+            ImageSource userPhotoFile;
+            try
+            {
+                TLFile tempPhotoFile = await GetUserPhotoAsync(user);
+                userPhotoFile = ByteToImage(tempPhotoFile.Bytes);
+            }
+            catch (NullReferenceException ex)
+            {
+                userPhotoFile = nullPhoto;
+            }
             string messageSender = "";
 
             foreach (var chatMessage in messages.Messages)
@@ -818,7 +860,7 @@ namespace WpfApp
                     }
                     else
                     {
-                        userMainPhoto.ImageSource = ByteToImage(userPhotoFile.Bytes);
+                        userMainPhoto.ImageSource = userPhotoFile;
                         messageSender = userMessageTitle;
                     }
 
