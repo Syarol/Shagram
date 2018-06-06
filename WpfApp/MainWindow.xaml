@@ -4,9 +4,8 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:WpfApp"
-        xmlns:emoji="clr-namespace:Emoji.Wpf;assembly=Emoji.Wpf"
         mc:Ignorable="d"
-        Title="Telegram" Height="550" Width="650" WindowStyle="None"
+        Title="Shagram" Height="550" Width="650" WindowStyle="None"
         ResizeMode="CanResizeWithGrip" AllowsTransparency="True"
         WindowState="Normal"
         WindowStartupLocation="CenterScreen" Loaded="Window_Loaded"
@@ -26,7 +25,7 @@
         <Grid Grid.Column="0" Grid.Row="0" Grid.RowSpan="3"  HorizontalAlignment="Left" Background="#0088CC" Grid.ColumnSpan="2" Width="200">
 
             <Grid Grid.Row="0" VerticalAlignment="Center">
-                <Label x:Name="open_options" Width="20" HorizontalAlignment="Left" Content="&#xf0c9;" FontFamily="Font Awesome 5 Free Solid" Margin="5,0,0,0" ToolTip="Options"/>
+                <Label x:Name="open_options" Width="20" HorizontalAlignment="Left" Content="&#xf0c9;" FontFamily="Font Awesome 5 Free Solid" Margin="5,0,0,0" ToolTip="Options" MouseDown="open_options_MouseDown"/>
                 <Label x:Name="user_name" Content="Label" Height="25" Margin="40,0,10,0"/>
             </Grid>
 
