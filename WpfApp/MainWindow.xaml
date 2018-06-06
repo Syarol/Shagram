@@ -87,11 +87,12 @@
                 </FlowDocument>
             </RichTextBox>
             <Button x:Name="send_message" Content="Send"  Margin="300,100,70,10" ToolTip="Send message" Click="send_message_Click" Width="50"/>
-            <Label x:Name="add_file_to_message" Content="" FontFamily="Font Awesome 5 Free Regular" Margin="20,98,384,10" ToolTip="Add File" MouseDown="pin_file_Click"/>
+            <Label x:Name="add_file_to_message" Content="" FontFamily="Font Awesome 5 Free Regular" Margin="20,98,406,10" ToolTip="Add File" MouseDown="pin_file_Click"/>
             <ScrollViewer Margin="70,96,180,0" VerticalScrollBarVisibility="Hidden" HorizontalScrollBarVisibility="Auto">
                 <Label x:Name="added_file_name" Content="" Padding="0"/>
             </ScrollViewer>
-            <Label x:Name="add_file_to_message_Copy" Content="" FontFamily="Font Awesome 5 Free Solid" Margin="44,98,358,10" ToolTip="Add File" MouseDown="pin_photo_Click"/>
+            <Label x:Name="add_file_to_message_Copy" Content="" FontFamily="Font Awesome 5 Free Solid" Margin="44,98,380,10" ToolTip="Add Photo" MouseDown="pin_photo_Click"/>
+            <Label x:Name="refresh_dialog" Content="" FontFamily="Font Awesome 5 Free Solid" Margin="415,10,10,98" ToolTip="Refresh" MouseDown="refresh_dialog_MouseDown"/>
         </Grid>
 
         <ScrollViewer x:Name="messages_field_scroll" Grid.Column="1" Grid.Row="1" VerticalScrollBarVisibility="Auto" ScrollChanged="messages_field_scroll_ScrollChanged" >

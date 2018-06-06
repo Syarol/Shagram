@@ -53,6 +53,7 @@ namespace WpfApp
         private TelegramClient client;
         private List<TLChannel> megagroupsList = new List<TLChannel>();
         private TLDialogs dialogsList = new TLDialogs();
+        private string EnterYourMessageHere;
 
         public MainWindow()
         {
@@ -111,6 +112,8 @@ namespace WpfApp
 
                     await Task.WhenAll(GetDialogsOnStartAsync());
                 }
+
+                EnterYourMessageHere = new TextRange(message_enter_txb.Document.ContentStart, message_enter_txb.Document.ContentEnd).Text;
             } 
             catch (Exception ex)
             {
@@ -310,21 +313,14 @@ namespace WpfApp
         {
             try
             {
+                string mainUserMessageTitle = _session.TLUser.FirstName + " " + _session.TLUser.LastName;
                 string userMessageTitle = user.FirstName + " " + user.LastName;
                 TLFile userPhotoFile = await GetUserPhotoAsync(user);
+                string messageSender = "";
 
                 foreach (var chatMessage in messages.Messages)
                 {
                     Border gridBorder = new Border();
-                    //gridBorder.Margin = new Thickness(10, 0, 10, 10);
-                    //gridBorder.CornerRadius = new CornerRadius(10);
-                    //gridBorder.BorderThickness = new Thickness(1, 1, 1, 1);
-                    //gridBorder.BorderBrush = (SolidColorBrush)(new BrushConverter().ConvertFrom("#c3c3c3"));
-                    //gridBorder.Background = System.Windows.Media.Brushes.LightYellow;
-                    //gridBorder.Width = 400;
-                    //gridBorder.HorizontalAlignment = HorizontalAlignment.Left;
-                    //gridBorder.VerticalAlignment = VerticalAlignment.Top;
-
                     Grid messageBlockWrapper = new Grid();
                     gridBorder.Child = messageBlockWrapper;
                     ColumnDefinition gridCol1 = new ColumnDefinition();
@@ -347,11 +343,12 @@ namespace WpfApp
                         if (user.Id != message.FromId.Value)
                         {
                             userMainPhoto.ImageSource = img_userPhoto.ImageSource;
-                            userMessageTitle = _session.TLUser.FirstName + " " + _session.TLUser.LastName;
+                            messageSender = mainUserMessageTitle;
                         }
                         else
                         {
                             userMainPhoto.ImageSource = ByteToImage(userPhotoFile.Bytes);
+                            messageSender = userMessageTitle;
                         }
 
                         userPhoto.SetValue(Grid.ColumnProperty, 1);
@@ -366,7 +363,7 @@ namespace WpfApp
 
                     Label sender = new Label();
                     sender.FontWeight = FontWeights.Bold;
-                    sender.Content = userMessageTitle;
+                    sender.Content = messageSender;
                     messageBlock.Children.Add(sender);
 
                     StackPanel txtBox = new StackPanel();
@@ -778,8 +775,10 @@ namespace WpfApp
 
         private async void OpenMessagesAsync(TLMessages messages, TLUser user)
         {
+            string mainUserMessageTitle = _session.TLUser.FirstName + " " + _session.TLUser.LastName;
             string userMessageTitle = user.FirstName + " " + user.LastName;
             TLFile userPhotoFile = await GetUserPhotoAsync(user);
+            string messageSender = "";
 
             foreach (var chatMessage in messages.Messages)
             {
@@ -815,11 +814,12 @@ namespace WpfApp
                     if (user.Id != message.FromId.Value)
                     {
                         userMainPhoto.ImageSource = img_userPhoto.ImageSource;
-                        userMessageTitle = _session.TLUser.FirstName + " " + _session.TLUser.LastName;
+                        messageSender = mainUserMessageTitle;
                     }
                     else
                     {
                         userMainPhoto.ImageSource = ByteToImage(userPhotoFile.Bytes);
+                        messageSender = userMessageTitle;
                     }
 
                     userPhoto.SetValue(Grid.ColumnProperty, 1);
@@ -834,7 +834,7 @@ namespace WpfApp
 
                 Label sender = new Label();
                 sender.FontWeight = FontWeights.Bold;
-                sender.Content = userMessageTitle;
+                sender.Content = messageSender;
                 messageBlock.Children.Add(sender);
 
                 StackPanel txtBox = new StackPanel();
@@ -1013,16 +1013,20 @@ namespace WpfApp
 
         private void message_enter_txb_GotFocus(object sender, RoutedEventArgs e)
         {
-            MessageBox.Show((new TextRange(message_enter_txb.Document.ContentStart, message_enter_txb.Document.ContentEnd).Text == "Enter Your message here").ToString());
-            message_enter_txb.Document.Blocks.Clear();
+            string richTextBoxText = new TextRange(message_enter_txb.Document.ContentStart, message_enter_txb.Document.ContentEnd).Text;
+            if (richTextBoxText.Equals(EnterYourMessageHere))
+            {
+                message_enter_txb.Document.Blocks.Clear();
+            }
         }
 
         private void message_enter_txb_LostFocus(object sender, RoutedEventArgs e)
         {
-            //if (message_enter_txb.Text == "") message_enter_txb.Text = "Enter Your messasge here";
-
             if (message_enter_txb.Document.Blocks.Count == 0)
-                message_enter_txb.AppendText("Enter Your messasge here");
+            {
+                message_enter_txb.Document.Blocks.Clear();
+                message_enter_txb.Document.Blocks.Add(new Paragraph(new Run("Enter Your message here")));
+            }
         }
 
         private void messages_field_scroll_ScrollChanged(object sender, ScrollChangedEventArgs e)
@@ -1068,7 +1072,7 @@ namespace WpfApp
         private async void send_message_Click(object sender, RoutedEventArgs e)
         {
             try {
-                var messageText = new TextRange(message_enter_txb.Document.ContentStart, message_enter_txb.Document.ContentEnd).Text;
+                string messageText = new TextRange(message_enter_txb.Document.ContentStart, message_enter_txb.Document.ContentEnd).Text;
                 if (messageText.Length != 0 && openedDialog != null && isPhotoPinned == false)
                 {
                     switch (openedDialog)
@@ -1164,6 +1168,11 @@ namespace WpfApp
                             break;
                     }
                 }
+
+                message_enter_txb.Document.Blocks.Clear();
+                message_enter_txb.Document.Blocks.Add(new Paragraph(new Run("Enter Your message here")));
+
+                refreshDialog(openedDialog);
             } catch (Exception ex)
             {
                 MessageBox.Show(ex.ToString());
@@ -1287,9 +1296,6 @@ namespace WpfApp
         {
             try
             {
-                //string userMessageTitle = user.FirstName + " " + user.LastName;
-                //TLFile userPhotoFile = await GetUserPhotoAsync(user);
-
                 foreach (var chatMessage in messages.Messages)
                 {
                     Border gridBorder = new Border();
@@ -1681,27 +1687,107 @@ namespace WpfApp
         {
             PropertiesWindow propertiesWindow = new PropertiesWindow();
             propertiesWindow.Show();
-            //this.Close();
+        }
 
-            /*string msgtext = "Click any button";
-            string txt = "My Title";
-            MessageBoxButton button = MessageBoxButton.YesNoCancel;
-            MessageBoxResult result = MessageBox.Show(msgtext, txt, button);
-
-            switch (result)
+        private async void refreshDialog(dynamic dialog)
+        {
+            try
             {
-                case MessageBoxResult.Yes:
-                    textBox1.Text = "Yes";
-                    break;
-                case MessageBoxResult.No:
-                    textBox1.Text = "No";
-                    break;
-                case MessageBoxResult.Cancel:
-                    textBox1.Text = "Cancel";
-                    break;
-            }*/
+                if (write_text_field.Height == 0)
+                {
+                    if (dialog.GetType() == typeof(TLChannel))
+                    {
+                        if (!dialog.Megagroup)
+                        {
+                            write_text_field.Height = 0;
+                            //messages_field_scroll.Height = ;
+                        }
+                        else if (dialog.Megagroup)
+                        {
+                            write_text_field.Height = 131;
+                        }
+                    }
+                    else
+                    {
+                        write_text_field.Height = 131;
+                        //messages_field_scroll.Height = ;
+                    }
+                }
+
+                int end;
+
+                messages_field.Children.Clear();
+                int start = 0;
+                if (dialog.GetType() == typeof(TLChannel))
+                {
+                    if (dialog.Megagroup) end = 50;
+                    else end = 25;
+                }
+                else end = 25;
+                messages_field_scroll.ScrollToEnd();
 
 
+                switch (dialog)
+                {
+                    case TLChannel item:
+                        var req = new TLRequestGetHistory
+                        {
+                            AddOffset = start,
+                            Limit = end,
+                            Peer = new TLInputPeerChannel { ChannelId = dialog.Id, AccessHash = dialog.AccessHash }
+                        };
+
+                        OpenMessagesAsync(await client.SendRequestAsync<TLChannelMessages>(req), item);
+                        break;
+                    case TLChat item:
+                        req = new TLRequestGetHistory
+                        {
+                            AddOffset = start,
+                            Limit = end,
+                            Peer = new TLInputPeerChat { ChatId = item.Id }
+                        };
+
+                        try
+                        {
+                            OpenChatMessagesAsync(await client.SendRequestAsync<TLMessagesSlice>(req), item);
+                        }
+                        catch (InvalidCastException ex)
+                        {
+                            OpenChatMessagesAsync(await client.SendRequestAsync<TLMessages>(req), item);
+                        }
+                        break;
+                    case TLUser item:
+                        req = new TLRequestGetHistory
+                        {
+                            AddOffset = start,
+                            Limit = end,
+                            Peer = new TLInputPeerUser { UserId = item.Id, AccessHash = item.AccessHash.Value }
+                        };
+
+                        try
+                        {
+                            OpenMessagesAsync(await client.SendRequestAsync<TLMessagesSlice>(req), item);
+                        }
+                        catch (InvalidCastException)
+                        {
+                            OpenMessagesAsync(await client.SendRequestAsync<TLMessages>(req), item);
+                        }
+                        break;
+                    default:
+                        MessageBox.Show("Hmm🤔...new dialog type");
+                        break;
+                }
+
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.ToString());
+            }
+        }
+
+        private void refresh_dialog_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            refreshDialog(openedDialog);
         }
     }
 }
