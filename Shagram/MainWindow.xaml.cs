@@ -35,7 +35,7 @@ using TLSharp.Core.Network;
 
 using MimeTypes;
 
-namespace WpfApp
+namespace Shagram
 {
     /// <summary>
     /// Interaction logic for MainWindow.xaml

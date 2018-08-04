@@ -13,7 +13,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using System.IO;
 
-namespace WpfApp
+namespace Shagram
 {
     /// <summary>
     /// Interaction logic for PropertiesWindow.xaml
