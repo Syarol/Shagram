@@ -825,14 +825,6 @@ namespace Shagram
             foreach (var chatMessage in messages.Messages)
             {
                 Border gridBorder = new Border();
-                //gridBorder.Margin = new Thickness(10, 0, 10, 10);
-                //gridBorder.CornerRadius = new CornerRadius(10);
-                //gridBorder.BorderThickness = new Thickness(1, 1, 1, 1);
-                //gridBorder.BorderBrush = (SolidColorBrush)(new BrushConverter().ConvertFrom("#c3c3c3"));
-                //gridBorder.Background = System.Windows.Media.Brushes.LightYellow;
-                //gridBorder.Width = 400;
-                //gridBorder.HorizontalAlignment = HorizontalAlignment.Left;
-                //gridBorder.VerticalAlignment = VerticalAlignment.Top;
 
                 Grid messageBlockWrapper = new Grid();
                 gridBorder.Child = messageBlockWrapper;

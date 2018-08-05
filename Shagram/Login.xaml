@@ -9,17 +9,19 @@
         WindowStartupLocation="CenterScreen"
         WindowStyle="None"
         ResizeMode="NoResize" AllowsTransparency="True"
-        Title="Login" Height="300" Width="300" Loaded="Window_Loaded">
+        Title="Login" Height="300" Width="400" Loaded="Window_Loaded">
     <Grid x:Name="login_form" Background="#FF3AADFD">
-        <Label x:Name="lbl_phone_number"  Content="Enter Your Phone Number" HorizontalAlignment="Left" Margin="60,135,0,0" VerticalAlignment="Top" FontSize="18"/>
-        <TextBox  x:Name ="txt_phone_number" HorizontalAlignment="Left" Height="23" Margin="80,180,0,0" Visibility="Visible" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="160" Background="#FF3AADFD" BorderThickness="0 0 0 1" BorderBrush="Black"/>
-        <Button x:Name="btn_setPhoneNumber" Content="Continue" HorizontalAlignment="Left" Margin="115,225,0,0" VerticalAlignment="Top" Width="85" Height="25" Click="btn_setPhoneNumber_Click"/>
+        <Label x:Name="lbl_phone_number"  Content="Enter Your Phone Number" Margin="92,101,92,0" VerticalAlignment="Top" HorizontalAlignment="Center" FontSize="18"/>
+        <TextBox  x:Name ="txt_phone_number" Height="23" Margin="197,168,38,0" Visibility="Visible" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Background="#FF3AADFD" BorderThickness="0 0 0 1" BorderBrush="Black" KeyDown="txt_phone_number_KeyDown"/>
+        <Button x:Name="btn_setPhoneNumber" Content="Continue" Margin="107.5,225,107.5,0" VerticalAlignment="Top" Height="25" Click="btn_setPhoneNumber_Click"/>
 
-        <Label x:Name="lbl_received_code" Content="Enter recived code" HorizontalAlignment="Left" Margin="83,135,0,0" VerticalAlignment="Top" FontSize="18" Visibility="Hidden"/>
-        <TextBox  x:Name ="txt_received_code" HorizontalAlignment="Left" Height="23" Margin="80,180,0,0" Visibility="Hidden" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="160" Background="#FF3AADFD" BorderThickness="0 0 0 1" BorderBrush="Black"/>
-        <Button x:Name="btn_setReceivedCode" Content="Continue" HorizontalAlignment="Left" Margin="115,225,0,0" VerticalAlignment="Top" Width="85" Height="25" Visibility="Hidden" Click="btn_setReceivedCode_Click"/>
+        <Label x:Name="lbl_received_code" Content="Enter received code" HorizontalAlignment="Center" Margin="92,101,92,0" VerticalAlignment="Top" FontSize="18" Visibility="Hidden" Width="216" HorizontalContentAlignment="Center"/>
+        <TextBox  x:Name ="txt_received_code" Height="23" Margin="90,168,90,0" Visibility="Hidden" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Background="#FF3AADFD" BorderThickness="0 0 0 1" BorderBrush="Black"/>
+        <Button x:Name="btn_setReceivedCode" Content="Continue" HorizontalAlignment="Left" Margin="107,225,0,0" VerticalAlignment="Top" Width="185" Height="25" Visibility="Hidden" Click="btn_setReceivedCode_Click"/>
 
-        <Label x:Name="window_close" Panel.ZIndex="4" Content="&#xF410;" HorizontalAlignment="Left" Margin="275,0,0,0" VerticalAlignment="Top" FontFamily="Font Awesome 5 Free Regular" FontSize="14" Cursor="Hand" ToolTip="Close" MouseDown="window_close_MouseDown"/>
-        <Label x:Name="window_hide" Content="&#xF2D1;" HorizontalAlignment="Left" Margin="255,0,0,0" VerticalAlignment="Top" FontFamily="Font Awesome 5 Free Regular" FontSize="14" Cursor="Hand" ToolTip="Minimize" MouseDown="window_hide_MouseDown"/>
+        <Label x:Name="window_close" Panel.ZIndex="4" Content="&#xF410;" HorizontalAlignment="Left" Margin="366,0,0,0" VerticalAlignment="Top" FontFamily="Font Awesome 5 Free Regular" FontSize="14" Cursor="Hand" ToolTip="Close" MouseDown="window_close_MouseDown"/>
+        <Label x:Name="window_hide" Content="&#xF2D1;" HorizontalAlignment="Left" Margin="337,0,0,0" VerticalAlignment="Top" FontFamily="Font Awesome 5 Free Regular" FontSize="14" Cursor="Hand" ToolTip="Minimize" MouseDown="window_hide_MouseDown"/>
+
+        <ComboBox x:Name="countriesCodesList" HorizontalAlignment="Left" Margin="38,169,0,0" VerticalAlignment="Top" Width="140" SelectionChanged="ComboBox_SelectionChanged" IsTextSearchEnabled="True" IsTextSearchCaseSensitive="False" IsReadOnly="True"/>
     </Grid>
 </Window>

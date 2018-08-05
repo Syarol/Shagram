@@ -31,7 +31,7 @@
 
             <Ellipse Grid.Row="1" Height="100" VerticalAlignment="Top" Width="100" >
                 <Ellipse.Fill>
-                    <ImageBrush x:Name="img_userPhoto" ImageSource="./none.png" />
+                    <ImageBrush x:Name="img_userPhoto" ImageSource="./Images/EmptyUserPhoto.png" />
                 </Ellipse.Fill>
             </Ellipse>
 
