@@ -1,6 +1,7 @@
 # Shagram
 
 Unofficial Telegram Desktop client  
+
 ![](https://i.imgur.com/uDNvac2.png)
 
 ## Dependencies

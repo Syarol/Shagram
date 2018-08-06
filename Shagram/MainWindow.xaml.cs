@@ -91,12 +91,13 @@ namespace Shagram
         {
             try
             {
-                var session = new FileSessionStore();
+                FileSessionStore session = new FileSessionStore();
                 client = Login.NewClient(session);
 
                 _session = Session.TryLoadOrCreateNew(session, "session");
 
                 await client.ConnectAsync();
+
                 if (!client.IsUserAuthorized())//if user not authorised than open login form
                 {
                     Login loginWindow = new Login(); // Inicialize login window
@@ -110,7 +111,7 @@ namespace Shagram
                     string userName = _session.TLUser.FirstName + " " + _session.TLUser.LastName;
                     user_name.Content = userName;
 
-                    var photo = await GetUserPhotoAsync(_session.TLUser);
+                    TLFile photo = await GetUserPhotoAsync(_session.TLUser);
                     img_userPhoto.ImageSource = ByteToImage(photo.Bytes);
 
                     await Task.WhenAll(GetDialogsOnStartAsync());
