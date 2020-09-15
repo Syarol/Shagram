@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Collections.ObjectModel;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -68,15 +69,15 @@ namespace Shagram
 
         private void window_maximize_MouseDown(object sender, MouseButtonEventArgs e)
         {
-            if (this.WindowState == WindowState.Normal)
+            if (WindowState == WindowState.Normal)
             {
-                this.WindowState = WindowState.Maximized;
+                WindowState = WindowState.Maximized;
                 window_maximize.Content = "";
                 window_maximize.ToolTip = "Normalize";
             }
             else
             {
-                this.WindowState = WindowState.Normal;
+                WindowState = WindowState.Normal;
                 window_maximize.Content = "";
                 window_maximize.ToolTip = "Maximize";
             }
@@ -84,38 +85,25 @@ namespace Shagram
 
         private void window_hide_MouseDown(object sender, MouseButtonEventArgs e)
         {
-            this.WindowState = WindowState.Minimized;
+            WindowState = WindowState.Minimized;
         }
 
         private async void Window_Loaded(object sender, RoutedEventArgs e)
         {
             try
             {
-                FileSessionStore session = new FileSessionStore();
+                var session = new FileSessionStore();
                 client = Login.NewClient(session);
-
                 _session = Session.TryLoadOrCreateNew(session, "session");
 
                 await client.ConnectAsync();
 
-                if (!client.IsUserAuthorized())//if user not authorised than open login form
-                {
-                    Login loginWindow = new Login(); // Inicialize login window
-                    loginWindow.Show();
-                    this.Close();
-                }
-                else
-                {
-                    nullPhoto = img_userPhoto.ImageSource;
+                nullPhoto = img_userPhoto.ImageSource;
+                user_name.Content = _session.TLUser.FirstName + " " + _session.TLUser.LastName;
 
-                    string userName = _session.TLUser.FirstName + " " + _session.TLUser.LastName;
-                    user_name.Content = userName;
+                img_userPhoto.ImageSource = await GetUserPhotoAsync(_session.TLUser);
 
-                    TLFile photo = await GetUserPhotoAsync(_session.TLUser);
-                    img_userPhoto.ImageSource = ByteToImage(photo.Bytes);
-
-                    await Task.WhenAll(GetDialogsOnStartAsync());
-                }
+                await Task.WhenAll(GetDialogsOnStartAsync());
 
                 EnterYourMessageHere = new TextRange(message_enter_txb.Document.ContentStart, message_enter_txb.Document.ContentEnd).Text;
             } 
@@ -143,26 +131,31 @@ namespace Shagram
                 image.StreamSource = mem;
                 image.EndInit();
             }
-            //image.Freeze();
             return image;
         }
 
-        private async Task<TLFile> GetUserPhotoAsync(TLUser user)
+        private async Task<ImageSource> GetUserPhotoAsync(TLUser user)
         {
-            var photo = ((TLUserProfilePhoto)user.Photo);
-            var photoLocation = (TLFileLocation)photo.PhotoBig;
-
-            var resFile = await client.GetFile(new TLInputFileLocation()
+            try
             {
-                LocalId = photoLocation.LocalId,
-                Secret = photoLocation.Secret,
-                VolumeId = photoLocation.VolumeId
-            }, 512 * 1024, 0);
+                var photo = ((TLUserProfilePhoto)user.Photo);
+                var photoLocation = (TLFileLocation)photo.PhotoBig;
 
-            return resFile;
+                var resFile = await client.GetFile(new TLInputFileLocation()
+                {
+                    LocalId = photoLocation.LocalId,
+                    Secret = photoLocation.Secret,
+                    VolumeId = photoLocation.VolumeId
+                }, 512 * 1024, 0);
+                
+                return ByteToImage(resFile.Bytes);
+            } catch(NullReferenceException)
+            {
+                return nullPhoto;
+            }
         }
 
-        private async Task<TLFile> GetChannelPhotoAsync(TLChannel channel)
+        private async Task<ImageSource> GetChannelPhotoAsync(TLChannel channel)
         {
             var photo = ((TLChatPhoto)channel.Photo);
             var photoLocation = (TLFileLocation)photo.PhotoSmall;
@@ -174,7 +167,7 @@ namespace Shagram
                 VolumeId = photoLocation.VolumeId
             }, 512 * 1024, 0);
 
-            return resFile;
+            return ByteToImage(resFile.Bytes);
         }
 
         private async void OpenDialogAsync(dynamic dialog)
@@ -340,16 +333,8 @@ namespace Shagram
             {
                 string mainUserMessageTitle = _session.TLUser.FirstName + " " + _session.TLUser.LastName;
                 string userMessageTitle = user.FirstName + " " + user.LastName;
-                ImageSource userPhotoFile;
-                try
-                {
-                    TLFile tempPhotoFile = await GetUserPhotoAsync(user);
-                    userPhotoFile = ByteToImage(tempPhotoFile.Bytes); 
-                }
-                catch (NullReferenceException ex)
-                {
-                    userPhotoFile = nullPhoto;
-                }
+                var userPhotoFile = await GetUserPhotoAsync(user); 
+
                 string messageSender = "";
 
                 foreach (var chatMessage in messages.Messages)
@@ -529,7 +514,7 @@ namespace Shagram
                                 break;
                             }
                     }
-                    messages_field.Children.Insert(0, /*messageBlockWrapper*/gridBorder);
+                    messages_field.Children.Insert(0, gridBorder);
                 }
             } catch (Exception ex)
             {
@@ -541,7 +526,7 @@ namespace Shagram
         {
             try
             {
-                TLFile chennelPhotoFile = await GetChannelPhotoAsync(channel);
+                var channelPhoto = await GetChannelPhotoAsync(channel);
 
                 foreach (var chatMessage in messages.Messages)
                 {
@@ -566,7 +551,7 @@ namespace Shagram
 
                     if (!channel.Megagroup)
                     {
-                        userMainPhoto.ImageSource = ByteToImage(chennelPhotoFile.Bytes);
+                        userMainPhoto.ImageSource = channelPhoto;
                     } else
                     {
                         if (chatMessage.GetType() == typeof(TLMessage))
@@ -811,16 +796,8 @@ namespace Shagram
         {
             string mainUserMessageTitle = _session.TLUser.FirstName + " " + _session.TLUser.LastName;
             string userMessageTitle = user.FirstName + " " + user.LastName;
-            ImageSource userPhotoFile;
-            try
-            {
-                TLFile tempPhotoFile = await GetUserPhotoAsync(user);
-                userPhotoFile = ByteToImage(tempPhotoFile.Bytes);
-            }
-            catch (NullReferenceException ex)
-            {
-                userPhotoFile = nullPhoto;
-            }
+            var userPhotoFile = await GetUserPhotoAsync(user);
+
             string messageSender = "";
 
             foreach (var chatMessage in messages.Messages)
@@ -993,13 +970,13 @@ namespace Shagram
                         break;
                     }
                 }
-                messages_field.Children.Insert(0, /*messageBlockWrapper*/gridBorder);
+                messages_field.Children.Insert(0, gridBorder);
             }
         }
 
         private async Task GetDialogsOnStartAsync()
         {
-            dialogsList = await client.GetUserDialogsAsync() as TLDialogs;
+            dialogsList = (TLDialogs) await client.GetUserDialogsAsync();
 
             if (!chats_list.HasContent)
             {
@@ -1008,23 +985,51 @@ namespace Shagram
 
                 ListBox usersList = new ListBox();
 
-                TextBlock savedMessages = new TextBlock();
-                savedMessages.Height = 20;
-                savedMessages.Text = "Saved Messages";
-                savedMessages.MouseDown += (sender, e) => OpenDialogAsync(_session.TLUser);
-                usersList.Items.Add(savedMessages);
+                RenderDialogsListElement(usersList, _session.TLUser, "Saved Messages");
 
                 foreach (var contact in contacts)
                 {
-                    TextBlock txtBlock = new TextBlock();
-                    txtBlock.Height = 20;
-                    txtBlock.Text = contact.FirstName + " " + contact.LastName;
-                    txtBlock.MouseDown += (sender, e) => OpenDialogAsync(contact);
-                    usersList.Items.Add(txtBlock);
+                    RenderDialogsListElement(usersList, contact);
                 }
 
                 contacts_list.Content = usersList;
             }
+        }
+
+        public void RenderDialogsListElement(ListBox parent, TLUser user)
+        {
+            TextBlock txtBlock = new TextBlock();
+            txtBlock.Height = 20;
+            txtBlock.Text = user.FirstName + " " + user.LastName;
+            txtBlock.MouseDown += (sender, e) => OpenDialogAsync(user);
+            parent.Items.Add(txtBlock);
+        }
+
+        public void RenderDialogsListElement(ListBox parent, TLUser user, string title)
+        {
+            TextBlock txtBlock = new TextBlock();
+            txtBlock.Height = 20;
+            txtBlock.Text = title;
+            txtBlock.MouseDown += (sender, e) => OpenDialogAsync(user);
+            parent.Items.Add(txtBlock);
+        }
+
+        public void RenderDialogsListElement(ListBox parent, TLChannel channel)
+        {
+            TextBlock txtBlock = new TextBlock();
+            txtBlock.Height = 20;
+            txtBlock.Text = channel.Title;
+            txtBlock.MouseDown += (sender, e) => OpenDialogAsync(channel);
+            parent.Items.Add(txtBlock);
+        }
+
+        public void RenderDialogsListElement(ListBox parent, TLChat chat)
+        {
+            TextBlock txtBlock = new TextBlock();
+            txtBlock.Height = 20;
+            txtBlock.Text = chat.Title;
+            txtBlock.MouseDown += (sender, e) => OpenDialogAsync(chat);
+            parent.Items.Add(txtBlock);
         }
 
         private async Task<bool> DidHaveMessagesAsync(TLUser contact)
@@ -1266,11 +1271,7 @@ namespace Shagram
                 {
                     if (!dialog.Megagroup)
                     {
-                        TextBlock txtBlock = new TextBlock();
-                        txtBlock.Height = 20;
-                        txtBlock.Text = dialog.Title;
-                        txtBlock.MouseDown += (sendered, ev) => OpenDialogAsync(dialog);
-                        chatsPanel.Items.Add(txtBlock);
+                        RenderDialogsListElement(chatsPanel, dialog);
                     }
                     else
                     {
@@ -1291,12 +1292,7 @@ namespace Shagram
                 foreach (var chat in userChats)
                 {
                     if (chat.Deactivated) continue;
-                    TextBlock txtBlock = new TextBlock();
-                    txtBlock.Height = 20;
-                    txtBlock.Text = chat.Title;
-
-                    txtBlock.MouseDown += (senderer, ev) => OpenDialogAsync(chat);
-                    chatsPanel.Items.Add(txtBlock);
+                    RenderDialogsListElement(chatsPanel, chat);
                 }
                 if (megagroupsList.Count == 0)
                 {
@@ -1314,11 +1310,7 @@ namespace Shagram
                 {
                     if (dialog.Megagroup)
                     {
-                        TextBlock txtBlock = new TextBlock();
-                        txtBlock.Height = 20;
-                        txtBlock.Text = dialog.Title;
-                        txtBlock.MouseDown += (sendered, ev) => OpenDialogAsync(dialog);
-                        chatsPanel.Items.Add(txtBlock);
+                        RenderDialogsListElement(chatsPanel, dialog);
                         megagroupsList.Add(dialog);
                     }
                 }
@@ -1334,14 +1326,6 @@ namespace Shagram
                 foreach (var chatMessage in messages.Messages)
                 {
                     Border gridBorder = new Border();
-                    //gridBorder.Margin = new Thickness(10, 0, 10, 10);
-                    //gridBorder.CornerRadius = new CornerRadius(10);
-                    //gridBorder.BorderThickness = new Thickness(1, 1, 1, 1);
-                    //gridBorder.BorderBrush = (SolidColorBrush)(new BrushConverter().ConvertFrom("#c3c3c3"));
-                    //gridBorder.Background = System.Windows.Media.Brushes.LightYellow;
-                    //gridBorder.Width = 400;
-                    //gridBorder.HorizontalAlignment = HorizontalAlignment.Left;
-                    //gridBorder.VerticalAlignment = VerticalAlignment.Top;
 
                     Grid messageBlockWrapper = new Grid();
                     gridBorder.Child = messageBlockWrapper;
@@ -1534,20 +1518,9 @@ namespace Shagram
 
         private async void OpenChatMessagesAsync(TLMessages messages, TLChat user)
         {
-           // string userMessageTitle = user.FirstName + " " + user.LastName;
-            //TLFile userPhotoFile = await GetUserPhotoAsync(user);
-
             foreach (var chatMessage in messages.Messages)
             {
                 Border gridBorder = new Border();
-                //gridBorder.Margin = new Thickness(10, 0, 10, 10);
-                //gridBorder.CornerRadius = new CornerRadius(10);
-                //gridBorder.BorderThickness = new Thickness(1, 1, 1, 1);
-                //gridBorder.BorderBrush = (SolidColorBrush)(new BrushConverter().ConvertFrom("#c3c3c3"));
-                //gridBorder.Background = System.Windows.Media.Brushes.LightYellow;
-                //gridBorder.Width = 400;
-                //gridBorder.HorizontalAlignment = HorizontalAlignment.Left;
-                //gridBorder.VerticalAlignment = VerticalAlignment.Top;
 
                 Grid messageBlockWrapper = new Grid();
                 gridBorder.Child = messageBlockWrapper;
@@ -1672,7 +1645,6 @@ namespace Shagram
                                                 textBlock.TextWrapping = TextWrapping.Wrap;
                                                 txtBox.Children.Add(textBlock);
                                                 textBlock.Text = item.Caption;
-                                                //messageBlockWrapper.Children.Add(txtBlock);
                                             }
                                             break;
                                         }
@@ -1693,7 +1665,7 @@ namespace Shagram
                                         break;
                                     default:
                                         {
-                                            //MessageBox.Show(message.Media.GetType().ToString());
+                                            MessageBox.Show(message.Media.GetType().ToString());
                                             break;
                                         }
                                 }
@@ -1714,13 +1686,13 @@ namespace Shagram
                             break;
                         }
                 }
-                messages_field.Children.Insert(0, /*messageBlockWrapper*/gridBorder);
+                messages_field.Children.Insert(0, gridBorder);
             }
         }
 
         private void open_options_MouseDown(object sender, MouseButtonEventArgs e)
         {
-            PropertiesWindow propertiesWindow = new PropertiesWindow();
+            var propertiesWindow = new PropertiesWindow();
             propertiesWindow.Show();
         }
 
@@ -1734,17 +1706,17 @@ namespace Shagram
                     {
                         if (!dialog.Megagroup)
                         {
-                            write_text_field.Height = 0;
+                            write_text_field.Visibility = Visibility.Hidden;
                             //messages_field_scroll.Height = ;
                         }
                         else if (dialog.Megagroup)
                         {
-                            write_text_field.Height = 131;
+                            write_text_field.Visibility = Visibility.Visible;
                         }
                     }
                     else
                     {
-                        write_text_field.Height = 131;
+                        write_text_field.Visibility = Visibility.Visible;
                         //messages_field_scroll.Height = ;
                     }
                 }
@@ -1824,5 +1796,6 @@ namespace Shagram
         {
             refreshDialog(openedDialog);
         }
+
     }
 }

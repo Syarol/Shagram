@@ -35,29 +35,32 @@
                 </Ellipse.Fill>
             </Ellipse>
 
-            <!--<DataGrid x:Name="contacts_grid" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" Margin="0,153,0,0"/>
--->
-            <!--<ScrollViewer  VerticalScrollBarVisibility="Auto">-->
-                <TabControl  Grid.Row="2" Name="tcSample" Background="#0088cc">
+            <TabControl  Grid.Row="2" Name="tcSample" Background="#0088cc">
                 <TabItem x:Name="contacts_list" VerticalAlignment="Bottom">
-                        <TabItem.Header>
-                            <Label Content="Contacts" MouseLeftButtonDown="contactsTab_Clicked" HorizontalAlignment="Stretch"/>
-                        </TabItem.Header>
-                    </TabItem>
-                    <TabItem x:Name="channels_list" VerticalAlignment="Bottom">
-                        <TabItem.Header>
-                            <Label Content="Channels" MouseLeftButtonDown="channelsTab_Clicked" HorizontalAlignment="Stretch"/>
-                        </TabItem.Header>
-                    </TabItem>
-                    <TabItem x:Name="chats_list" VerticalAlignment="Bottom" Margin="-2,0,-11,0">
-                        <TabItem.Header>
-                            <Label Content="Chats" MouseLeftButtonDown="chatsTab_Clicked" HorizontalAlignment="Stretch"/>
-                        </TabItem.Header>
-                    </TabItem>
-                </TabControl>
-
-            <!--</ScrollViewer>-->
-
+                    <TabItem.Header>
+                        <Label Content="Contacts" MouseLeftButtonDown="contactsTab_Clicked" HorizontalAlignment="Stretch"/>
+                    </TabItem.Header>
+                    <TabItem.Content>
+                        <ListBox>
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Height="20" Text="{Binding Path=Title}" MouseDown="{Binding openContactsList}"/>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </TabItem.Content>
+                </TabItem>
+                <TabItem x:Name="channels_list" VerticalAlignment="Bottom">
+                    <TabItem.Header>
+                        <Label Content="Channels" MouseLeftButtonDown="channelsTab_Clicked" HorizontalAlignment="Stretch"/>
+                    </TabItem.Header>
+                </TabItem>
+                <TabItem x:Name="chats_list" VerticalAlignment="Bottom" Margin="-2,0,-11,0">
+                    <TabItem.Header>
+                        <Label Content="Chats" MouseLeftButtonDown="chatsTab_Clicked" HorizontalAlignment="Stretch"/>
+                    </TabItem.Header>
+                </TabItem>
+            </TabControl>
 
             <Grid.RowDefinitions>
                 <RowDefinition Height="50"/>
