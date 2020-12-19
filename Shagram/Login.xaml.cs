@@ -28,11 +28,7 @@ namespace Shagram
             InitializeComponent();
 
             List<Country> countriesList = LoadJson(Directory.GetParent(Directory.GetCurrentDirectory()).Parent.FullName + "./countries.json");
-
             countriesCodesList.ItemsSource = countriesList;
-            countriesCodesList.DisplayMemberPath = "NameAndCode";
-            countriesCodesList.SelectedValuePath = "Dial_code";
-            countriesCodesList.SelectedIndex = 0;
         }
 
         private void window_close_MouseDown(object sender, MouseButtonEventArgs e)
@@ -79,14 +75,8 @@ namespace Shagram
 
                 hash = await client.SendCodeRequestAsync(NumberToSendMessage);
 
-                lbl_phone_number.Visibility = Visibility.Hidden;
-                txt_phone_number.Visibility = Visibility.Hidden;
-                btn_setPhoneNumber.Visibility = Visibility.Hidden;
-                countriesCodesList.Visibility = Visibility.Hidden;
-
-                lbl_received_code.Visibility = Visibility.Visible;
-                txt_received_code.Visibility = Visibility.Visible;
-                btn_setReceivedCode.Visibility = Visibility.Visible;
+                phone_dialog.Visibility = Visibility.Hidden;
+                code_dialog.Visibility = Visibility.Visible;
             }
             catch (Exception ex)
             {
