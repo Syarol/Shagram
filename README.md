@@ -12,13 +12,15 @@ Unofficial Telegram Desktop client
 
 ## Install & Use
 1. Clone this repo 
-2. Compile via VisualStudio/SharpDevelop/some another
-3. Run
+2. At [Telegram API development tools](https://my.telegram.org/apps) create a new app and receive unique "app_id" and "app_hash" (Warning! It is not possible to change these values, so be careful with them)
+3. At cloned repo, open the "Shagram" folder and create the ".env" file there. Inside this file save received app credentials as "API_ID" and "API_HASH" values 
+4. Compile via VisualStudio/SharpDevelop/some another
+5. Run
 
 # Contacts
 To get in touch with me, just write me at:
-* Email: oleh_yaroshchuk@yahoo.com
-* Telegram: @Oleh_Yaroshchuk (https://www.t.me/Oleh_Yaroshchuk)
+* Email: oleh.yaroshchuk@outlook.com
+* Telegram: [@oleh_yaroshchuk](https://www.t.me/oleh_yaroshchuk)
 
 # License
 MIT
